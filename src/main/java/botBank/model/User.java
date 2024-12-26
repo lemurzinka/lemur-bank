@@ -35,25 +35,22 @@ public class User {
 
 
 
-    @Column(nullable = false, name = "first_name")
+    @Column( name = "first_name")
     @NotNull(message = "first name can not be null")
     private String firstName;
 
 
-    @Column(nullable = false, name = "last_name")
-    @NotNull(message = "last name can not be null")
+    @Column(name = "last_name")
     private String lastName;
 
-    @Column(nullable = false, name = "phone_number", unique = true)
-    @NotNull(message = "phone number can not be null")
-    @Pattern(regexp = "^\\+?\\d{10,15}$", message = "phone number must be valid")
+
+    @Column(name = "phone_number", unique = true)
     private String number;
 
-    @Column(nullable = false, unique = true)
-    @NotNull(message = "email can not be null")
+    @Column(unique = true)
     private String email;
 
-    @Column(nullable = false, updatable = false, name = "created_at")
+    @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)

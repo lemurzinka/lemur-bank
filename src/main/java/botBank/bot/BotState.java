@@ -7,26 +7,45 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public enum BotState {
 
     Start {
-        private boolean userFound;
         @Override
         public void enter(BotContext context) {
             sendMessage(context, "Welcome!\n" +
-                    "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.\n" +
-                    "\n" +
-                    "Please share your phone number so we can verify your identity and ensure a smooth experience.\n" +
-                    "\n" +
+                    "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
+        }
+
+        @Override
+        public BotState nextState() {
+            return EnterPhone;
+        }
+
+
+    },
+
+    EnterPhone {
+        private boolean userFound;
+        private boolean isWrongPhone;
+
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please share your phone number so we can verify your identity and ensure a smooth experience.\n" +
                     "Just type your phone number below (including the country code, e.g., +1234567890).");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String phoneNumber = context.getInput();
-            User user = context.getUserService().findByNumber(phoneNumber);
 
+            if (!Utils.isValidPhoneNumber(phoneNumber)) {
+                sendMessage(context, "Wrong phone number format!");
+                isWrongPhone = true;
+                return;
+            }
+
+            User user = context.getUserService().findByNumber(phoneNumber);
             if (user != null) {
-                String name = user.getFirstName();
-                sendMessage(context, "Welcome back, " + name);
+                sendMessage(context, "Welcome back, " + user.getFirstName());
                 userFound = true;
+                context.getUser().setTelegramId(user.getTelegramId());
             } else {
                 context.getUser().setNumber(phoneNumber);
                 sendMessage(context, "Phone number saved. Proceeding with registration...");
@@ -36,13 +55,10 @@ public enum BotState {
 
         @Override
         public BotState nextState() {
-            if (userFound) {
-                return Start;
-            } else {
-                return EnterEmail;
-            }
+            return isWrongPhone ? EnterPhone : (userFound ? Start : EnterEmail);
         }
     },
+
 
 
     EnterEmail {
@@ -106,18 +122,18 @@ public enum BotState {
         public void enter(BotContext context) {
             sendMessage(context, "Enter your last name please:");
         }
+
         @Override
         public void handleInput(BotContext context) {
             String lastName = context.getInput();
             User user = context.getUser();
-            context.getUser().setLastName(lastName);
+            user.setLastName(lastName); // Оновлення поля lastName у користувача
 
-            context.getUserService().addUser(user);
             sendMessage(context, "You have successfully registered! Welcome to Lemur Bank.");
-
         }
+
         @Override
-        public BotState nextState(){
+        public BotState nextState() {
             return Start;
         }
     };
@@ -157,6 +173,8 @@ public enum BotState {
 
         return states[id];
     }
+
+
 
     public abstract void enter (BotContext context);
     public abstract BotState nextState();

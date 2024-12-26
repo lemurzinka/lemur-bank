@@ -47,17 +47,19 @@ public class ChatBot extends TelegramLongPollingBot {
             BotState state;
 
             if (user == null) {
-                state = BotState.getInitialState();
-
+                LOGGER.info("New user detected, initializing state to Start");
+                state = BotState.Start;
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
 
                 context = BotContext.of(this, user, text, userService);
                 state.enter(context);
+                LOGGER.info("User created and state set to Start");
 
             } else {
                 context = BotContext.of(this, user, text, userService);
                 state = BotState.byId(user.getStateId());
+                LOGGER.info("User found, current state: " + state.name());
             }
             state.handleInput(context);
 
@@ -69,9 +71,10 @@ public class ChatBot extends TelegramLongPollingBot {
             user.setStateId(state.ordinal());
             userService.updateUser(user);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error processing update", e);
         }
     }
+
 
 
 }
