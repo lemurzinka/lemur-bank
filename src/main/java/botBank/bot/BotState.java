@@ -24,6 +24,8 @@ public enum BotState {
     EnterPhone {
         private boolean userFound;
         private boolean isWrongPhone;
+        private int counterOfInputProblem = 0;
+        private boolean isInputProblem;
 
         @Override
         public void enter(BotContext context) {
@@ -38,6 +40,11 @@ public enum BotState {
             if (!Utils.isValidPhoneNumber(phoneNumber)) {
                 sendMessage(context, "Wrong phone number format!");
                 isWrongPhone = true;
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    isInputProblem = true;
+                    sendMessage(context, "Input problem, return to start.");
+                }
                 return;
             }
 
@@ -55,7 +62,7 @@ public enum BotState {
 
         @Override
         public BotState nextState() {
-            return isWrongPhone ? EnterPhone : (userFound ? Start : EnterEmail);
+            return  isInputProblem ? Start : isWrongPhone ? EnterPhone : (userFound ? Start : EnterEmail);
         }
     },
 
@@ -63,6 +70,7 @@ public enum BotState {
 
     EnterEmail {
         private BotState next;
+        private int counterOfInputProblem = 0;
 
         @Override
         public void enter(BotContext context) {
@@ -71,7 +79,6 @@ public enum BotState {
 
         @Override
         public void handleInput(BotContext context) {
-            try {
                 String email = context.getInput();
 
                 if (Utils.isValidEmail(email)) {
@@ -79,11 +86,15 @@ public enum BotState {
                     next = Approved;
                 } else {
                     sendMessage(context, "Wrong e-mail address!");
-                    next = EnterEmail;
+                    counterOfInputProblem ++;
+                    if (counterOfInputProblem > 3) {
+                        sendMessage(context, "Input problem, return to start.");
+                        next = Start;
+                    }else {
+                        sendMessage(context, "Enter your e-mail please again");
+                    }
+
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
 
 
