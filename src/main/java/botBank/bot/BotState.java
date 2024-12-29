@@ -2,20 +2,43 @@ package botBank.bot;
 
 import botBank.model.User;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.List;
+
 
 public enum BotState {
 
     Start {
+
+        private BotState next;
+
         @Override
         public void enter(BotContext context) {
-            sendMessage(context, "Welcome!\n" +
-                    "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
+
+            User user = context.getUser();
+
+
+            if (user.getFirstName() != null && !user.getFirstName().isEmpty()) {
+                sendMessage(context, "Welcome back, " + user.getFirstName());
+                next = Menu;
+
+            } else {
+                sendMessage(context, "Welcome!\n" +
+                        "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
+                next = EnterPhone;
+
+            }
+
         }
+
+
 
         @Override
         public BotState nextState() {
-            return EnterPhone;
+            return next;
         }
 
 
@@ -62,10 +85,9 @@ public enum BotState {
 
         @Override
         public BotState nextState() {
-            return  isInputProblem ? Start : isWrongPhone ? EnterPhone : (userFound ? Start : EnterEmail);
+            return isInputProblem ? Start : isWrongPhone ? EnterPhone : (userFound ? Start : EnterEmail);
         }
     },
-
 
 
     EnterEmail {
@@ -79,39 +101,44 @@ public enum BotState {
 
         @Override
         public void handleInput(BotContext context) {
-                String email = context.getInput();
+            String email = context.getInput();
 
-                if (Utils.isValidEmail(email)) {
-                    context.getUser().setEmail(context.getInput());
-                    next = Approved;
+            if (Utils.isValidEmail(email)) {
+                context.getUser().setEmail(context.getInput());
+                next = Approved;
+            } else {
+                sendMessage(context, "Wrong e-mail address!");
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    sendMessage(context, "Input problem, return to start.");
+                    next = Start;
                 } else {
-                    sendMessage(context, "Wrong e-mail address!");
-                    counterOfInputProblem ++;
-                    if (counterOfInputProblem > 3) {
-                        sendMessage(context, "Input problem, return to start.");
-                        next = Start;
-                    }else {
-                        sendMessage(context, "Enter your e-mail please again");
-                    }
-
+                    sendMessage(context, "Enter your e-mail please again");
                 }
+
+            }
         }
 
 
         @Override
-        public BotState nextState() {return next;}},
+        public BotState nextState() {
+            return next;
+        }
+    },
 
-    Approved(false){
+    Approved(false) {
         @Override
-        public void enter(BotContext context) {sendMessage(context, "Email approved!");}
+        public void enter(BotContext context) {
+            sendMessage(context, "Email approved!");
+        }
 
         @Override
-        public BotState nextState(){
+        public BotState nextState() {
             return EnterFirstName;
         }
     },
 
-    EnterFirstName{
+    EnterFirstName {
         @Override
         public void enter(BotContext context) {
             sendMessage(context, "Enter your first name please:");
@@ -122,8 +149,9 @@ public enum BotState {
             String firstName = context.getInput();
             context.getUser().setFirstName(firstName);
         }
+
         @Override
-        public BotState nextState(){
+        public BotState nextState() {
             return EnterLastName;
         }
     },
@@ -147,6 +175,33 @@ public enum BotState {
         public BotState nextState() {
             return Start;
         }
+    },
+
+
+    Menu{
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Enter your command");
+        }
+
+        private BotState next;
+
+        @Override
+        public void handleInput(BotContext context) {
+            String command = context.getInput().toLowerCase().trim();
+
+            if (command.equals("update")){
+                next = EnterEmail;
+            }
+            else {
+                sendMessage(context, "Invalid command. Please type 'update' to proceed.");
+                next = Start;
+            }
+        }
+        @Override
+        public BotState nextState() {
+            return next;
+        }
     };
 
 
@@ -155,13 +210,14 @@ public enum BotState {
         message.setChatId(Long.toString(context.getUser().getTelegramId()));
         message.setText(text);
 
-        try{
+        try {
             context.getBot().execute(message);
-        }catch (TelegramApiException e){
+        } catch (TelegramApiException e) {
             e.printStackTrace();
         }
 
     }
+
     private static BotState[] states;
     private final boolean inputNeeded;
 
@@ -186,13 +242,47 @@ public enum BotState {
     }
 
 
+    public abstract void enter(BotContext context);
 
-    public abstract void enter (BotContext context);
     public abstract BotState nextState();
+
     public boolean isInputNeeded() {
         return inputNeeded;
     }
+
     public void handleInput(BotContext context) {
         // do nothing by default
     }
+    protected void sendInlineKeyboardMessage(BotContext context, String text) {
+        SendMessage message = new SendMessage();
+        message.setChatId(Long.toString(context.getUser().getTelegramId()));
+        message.setText(text);
+
+        // Створення кнопок
+        InlineKeyboardButton button1 = new InlineKeyboardButton();
+        button1.setText("Update my account");
+        button1.setCallbackData("update_account"); // callback для обробки дії
+
+        InlineKeyboardButton button2 = new InlineKeyboardButton();
+        button2.setText("Return to start");
+        button2.setCallbackData("return_to_start"); // callback для обробки дії
+
+        // Створення рядка з кнопками
+        List<InlineKeyboardButton> row1 = row1 = List.of(button1, button2);
+        // Додавання рядка кнопок до клавіатури
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(List.of(row1));
+
+        message.setReplyMarkup(markup);
+
+        try {
+            context.getBot().execute(message);
+        } catch (TelegramApiException e) {
+            BotState.Start.sendMessage(context, "An error occurred. Please try again later.");
+//            LOGGER.error("Failed to send message to chat ID " + message.getChatId(), e);
+        }
+    }
+
+
+
 }

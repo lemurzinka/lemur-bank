@@ -30,6 +30,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
     @Column(nullable = false, name = "telegram_id", unique = true)
     private Long telegramId;
 
