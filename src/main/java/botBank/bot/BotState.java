@@ -1,6 +1,8 @@
 package botBank.bot;
 
+import botBank.model.Card;
 import botBank.model.User;
+import botBank.service.CardService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -166,7 +168,7 @@ public enum BotState {
         public void handleInput(BotContext context) {
             String lastName = context.getInput();
             User user = context.getUser();
-            user.setLastName(lastName); // Оновлення поля lastName у користувача
+            user.setLastName(lastName);
 
             sendMessage(context, "You have successfully registered! Welcome to Lemur Bank.");
         }
@@ -192,6 +194,8 @@ public enum BotState {
 
             if (command.equals("update")){
                 next = EnterEmail;
+            }else if (command.equals("addcard")){
+                next = AddCard;
             }
             else {
                 sendMessage(context, "Invalid command. Please type 'update' to proceed.");
@@ -201,6 +205,33 @@ public enum BotState {
         @Override
         public BotState nextState() {
             return next;
+        }
+    },
+
+    AddCard {
+
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "What type of card it should be added (credit, debit)?");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String type = context.getInput().toLowerCase().trim();
+
+
+            if (type.equals("credit") || type.equals("debit")) {
+                Card card = context.getCardService().createCard(type.toUpperCase());
+                card.setUser(context.getUser());
+                context.getCardService().addCard(card);
+            }else {
+                sendMessage(context, "Invalid type. Please choose either 'credit' or 'debit'.");
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return Menu;
         }
     };
 
@@ -253,35 +284,7 @@ public enum BotState {
     public void handleInput(BotContext context) {
         // do nothing by default
     }
-    protected void sendInlineKeyboardMessage(BotContext context, String text) {
-        SendMessage message = new SendMessage();
-        message.setChatId(Long.toString(context.getUser().getTelegramId()));
-        message.setText(text);
 
-        // Створення кнопок
-        InlineKeyboardButton button1 = new InlineKeyboardButton();
-        button1.setText("Update my account");
-        button1.setCallbackData("update_account"); // callback для обробки дії
-
-        InlineKeyboardButton button2 = new InlineKeyboardButton();
-        button2.setText("Return to start");
-        button2.setCallbackData("return_to_start"); // callback для обробки дії
-
-        // Створення рядка з кнопками
-        List<InlineKeyboardButton> row1 = row1 = List.of(button1, button2);
-        // Додавання рядка кнопок до клавіатури
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        markup.setKeyboard(List.of(row1));
-
-        message.setReplyMarkup(markup);
-
-        try {
-            context.getBot().execute(message);
-        } catch (TelegramApiException e) {
-            BotState.Start.sendMessage(context, "An error occurred. Please try again later.");
-//            LOGGER.error("Failed to send message to chat ID " + message.getChatId(), e);
-        }
-    }
 
 
 

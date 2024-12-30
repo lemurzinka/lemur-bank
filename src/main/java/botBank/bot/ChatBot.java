@@ -1,6 +1,7 @@
 package botBank.bot;
 
 import botBank.model.User;
+import botBank.service.CardService;
 import botBank.service.UserService;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -24,9 +25,13 @@ public class ChatBot extends TelegramLongPollingBot {
     private String botToken;
 
     private final UserService userService;
+    private final CardService cardService;
 
 
-    public ChatBot(UserService userService) {this.userService = userService;}
+    public ChatBot(UserService userService, CardService cardService) {
+        this.userService = userService;
+        this.cardService = cardService;
+    }
 
     @Override
     public String getBotUsername() {return botName;}
@@ -52,12 +57,12 @@ public class ChatBot extends TelegramLongPollingBot {
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
 
-                context = BotContext.of(this, user, text, userService);
+                context = BotContext.of(this, user, text, userService, cardService);
                 state.enter(context);
                 LOGGER.info("User created and state set to Start");
 
             } else {
-                context = BotContext.of(this, user, text, userService);
+                context = BotContext.of(this, user, text, userService, cardService);
                 state = BotState.byId(user.getStateId());
                 LOGGER.info("User found, current state: " + state.name());
             }
