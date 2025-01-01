@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -56,11 +54,15 @@ public class User {
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role = UserRole.USER;
+
+    @Column(name = "is_admin", nullable = false)
+    private boolean isAdmin  = false;
 
     private Integer stateId;
+
+    @Column(name = "is_banned", nullable = false)
+    private boolean isBanned = false;
+
 
     @PrePersist
     public void prePersist() {
@@ -74,11 +76,12 @@ public class User {
         this.stateId= state;
     }
 
-    public User(Long telegramId, Integer stateId, UserRole role){
+    public User(Long telegramId, Integer stateId, boolean isAdmin){
         this.telegramId = telegramId;
         this.stateId = stateId;
-        this.role = role;
+        this.isAdmin = isAdmin;
     }
+
 
 
 

@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import botBank.repo.UserRepository;
 
+import java.util.List;
+
 
 @Service
 public class UserService {
@@ -33,5 +35,11 @@ public class UserService {
     public void updateUser(User user) {
         userRepository.save(user);
     }
+
+    @Transactional(readOnly = true)
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
 }
 

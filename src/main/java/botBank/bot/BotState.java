@@ -2,10 +2,7 @@ package botBank.bot;
 
 import botBank.model.Card;
 import botBank.model.User;
-import botBank.service.CardService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
@@ -13,41 +10,26 @@ import java.util.List;
 
 public enum BotState {
 
-    Start {
 
-        private BotState next;
+
+    Start {
 
         @Override
         public void enter(BotContext context) {
 
-            User user = context.getUser();
-
-
-            if (user.getFirstName() != null && !user.getFirstName().isEmpty()) {
-                sendMessage(context, "Welcome back, " + user.getFirstName());
-                next = Menu;
-
-            } else {
                 sendMessage(context, "Welcome!\n" +
                         "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
-                next = EnterPhone;
-
-            }
-
         }
-
-
 
         @Override
         public BotState nextState() {
-            return next;
+            return EnterPhone;
         }
 
 
     },
 
     EnterPhone {
-        private boolean userFound;
         private boolean isWrongPhone;
         private int counterOfInputProblem = 0;
         private boolean isInputProblem;
@@ -72,22 +54,16 @@ public enum BotState {
                 }
                 return;
             }
-
-            User user = context.getUserService().findByNumber(phoneNumber);
-            if (user != null) {
-                sendMessage(context, "Welcome back, " + user.getFirstName());
-                userFound = true;
-                context.getUser().setTelegramId(user.getTelegramId());
-            } else {
+            isWrongPhone = false;
+            counterOfInputProblem = 0;
                 context.getUser().setNumber(phoneNumber);
-                sendMessage(context, "Phone number saved. Proceeding with registration...");
-                userFound = false;
-            }
+                sendMessage(context, "Phone number saved.");
+
         }
 
         @Override
         public BotState nextState() {
-            return isInputProblem ? Start : isWrongPhone ? EnterPhone : (userFound ? Start : EnterEmail);
+            return isInputProblem ? Start : (isWrongPhone ? EnterPhone : EnterEmail);
         }
     },
 
@@ -150,6 +126,7 @@ public enum BotState {
         public void handleInput(BotContext context) {
             String firstName = context.getInput();
             context.getUser().setFirstName(firstName);
+            sendMessage(context, "First name saved.");
         }
 
         @Override
@@ -170,12 +147,13 @@ public enum BotState {
             User user = context.getUser();
             user.setLastName(lastName);
 
-            sendMessage(context, "You have successfully registered! Welcome to Lemur Bank.");
+
+            sendMessage(context, "Last name saved. Next state is menu");
         }
 
         @Override
         public BotState nextState() {
-            return Start;
+            return Menu;
         }
     },
 
@@ -183,23 +161,25 @@ public enum BotState {
     Menu{
         @Override
         public void enter(BotContext context) {
-            sendMessage(context, "Enter your command");
+            sendMessage(context, "You are in menu now. Write a command");
         }
 
         private BotState next;
-
         @Override
         public void handleInput(BotContext context) {
             String command = context.getInput().toLowerCase().trim();
 
-            if (command.equals("update")){
-                next = EnterEmail;
-            }else if (command.equals("addcard")){
-                next = AddCard;
-            }
-            else {
-                sendMessage(context, "Invalid command. Please type 'update' to proceed.");
-                next = Start;
+            switch (command) {
+                case "update":
+                    next = EnterEmail;
+                    break;
+                case "addcard":
+                    next = AddCard;
+                    break;
+                default:
+                    sendMessage(context, "Invalid command. Please type 'update' or 'addcard',");
+                    next = Menu;
+                    break;
             }
         }
         @Override
@@ -236,7 +216,7 @@ public enum BotState {
     };
 
 
-    protected void sendMessage(BotContext context, String text) {
+    protected static void sendMessage(BotContext context, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(Long.toString(context.getUser().getTelegramId()));
         message.setText(text);
