@@ -4,6 +4,8 @@ import botBank.model.Card;
 import botBank.model.User;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
@@ -161,34 +163,39 @@ public enum BotState {
 
 
     Menu {
+        private BotState next;
         @Override
         public void enter(BotContext context) {
 
-            List<BotCommand> commands = List.of(
-                    new BotCommand("/update", "Update your email address"),
-                    new BotCommand("/addcard", "Add a new card to your account")
-            );
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
 
-            context.getBot().registerBotCommands(commands);
+            InlineKeyboardButton updateButton = new InlineKeyboardButton("Update Email");
+            updateButton.setCallbackData("/update");
+            InlineKeyboardButton addCardButton = new InlineKeyboardButton("Add New Card");
+            addCardButton.setCallbackData("/addcard");
 
-            sendMessage(context, "You are in menu now. Write a command");
+            markup.setKeyboard(List.of(List.of(updateButton, addCardButton)));
+
+
+            sendMessageWithInlineKeyboard (context, "You are in the menu now. Choose an option:", markup);
         }
-
-        private BotState next;
 
         @Override
         public void handleInput(BotContext context) {
+
             String command = context.getInput().toLowerCase().trim();
 
             switch (command) {
                 case "/update":
+
                     next = EnterEmail;
                     break;
                 case "/addcard":
+
                     next = AddCard;
                     break;
                 default:
-                    sendMessage(context, "Invalid command. Please type /update or /addcard.");
+                    sendMessage(context, "Invalid command. Please choose again.");
                     next = Menu;
                     break;
             }
@@ -199,7 +206,6 @@ public enum BotState {
             return next;
         }
     },
-
 
     AddCard {
 
@@ -278,7 +284,18 @@ public enum BotState {
     public void handleInput(BotContext context) {
         // do nothing by default
     }
+    private static void sendMessageWithInlineKeyboard(BotContext context, String text, InlineKeyboardMarkup markup) {
+        SendMessage message = new SendMessage();
+        message.setChatId(Long.toString(context.getUser().getTelegramId()));
+        message.setText(text);
+        message.setReplyMarkup(markup);
 
+        try {
+            context.getBot().execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 }
