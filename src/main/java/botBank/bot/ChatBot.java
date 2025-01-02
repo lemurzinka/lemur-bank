@@ -10,14 +10,29 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.List;
 
 @Component
 @PropertySource("classpath:telegram.properties")
 public class ChatBot extends TelegramLongPollingBot {
+
+    public void registerBotCommands(List<BotCommand> commands) {
+        SetMyCommands setMyCommands = new SetMyCommands();
+        setMyCommands.setCommands(commands);
+
+        try {
+            execute(setMyCommands);
+            LOGGER.info("Bot commands updated successfully");
+        } catch (TelegramApiException e) {
+            LOGGER.error("Failed to update bot commands", e);
+        }
+    }
+
 
     private static final Logger LOGGER = LogManager.getLogger(ChatBot.class); //log4j
 
@@ -35,6 +50,9 @@ public class ChatBot extends TelegramLongPollingBot {
     public ChatBot(UserService userService, CardService cardService) {
         this.userService = userService;
         this.cardService = cardService;
+
+
+
     }
 
     @Override
@@ -138,5 +156,8 @@ public class ChatBot extends TelegramLongPollingBot {
 
         sendMessage(admin.getTelegramId(), sb.toString());
     }
+
+
+
 
 }

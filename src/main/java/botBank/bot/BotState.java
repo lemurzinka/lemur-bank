@@ -3,6 +3,7 @@ package botBank.bot;
 import botBank.model.Card;
 import botBank.model.User;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
@@ -74,6 +75,7 @@ public enum BotState {
 
         @Override
         public void enter(BotContext context) {
+            List<BotCommand> commands = List.of();
             sendMessage(context, "Enter your e-mail please:");
         }
 
@@ -158,40 +160,52 @@ public enum BotState {
     },
 
 
-    Menu{
+    Menu {
         @Override
         public void enter(BotContext context) {
+
+            List<BotCommand> commands = List.of(
+                    new BotCommand("/update", "Update your email address"),
+                    new BotCommand("/addcard", "Add a new card to your account")
+            );
+
+            context.getBot().registerBotCommands(commands);
+
             sendMessage(context, "You are in menu now. Write a command");
         }
 
         private BotState next;
+
         @Override
         public void handleInput(BotContext context) {
             String command = context.getInput().toLowerCase().trim();
 
             switch (command) {
-                case "update":
+                case "/update":
                     next = EnterEmail;
                     break;
-                case "addcard":
+                case "/addcard":
                     next = AddCard;
                     break;
                 default:
-                    sendMessage(context, "Invalid command. Please type 'update' or 'addcard',");
+                    sendMessage(context, "Invalid command. Please type /update or /addcard.");
                     next = Menu;
                     break;
             }
         }
+
         @Override
         public BotState nextState() {
             return next;
         }
     },
 
+
     AddCard {
 
         @Override
         public void enter(BotContext context) {
+            List<BotCommand> commands = List.of();
             sendMessage(context, "What type of card it should be added (credit, debit)?");
         }
 
@@ -264,7 +278,6 @@ public enum BotState {
     public void handleInput(BotContext context) {
         // do nothing by default
     }
-
 
 
 
