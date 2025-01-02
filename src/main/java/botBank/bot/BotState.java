@@ -233,6 +233,18 @@ public enum BotState {
         public BotState nextState() {
             return Menu;
         }
+    },
+
+    BANNED{
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "You are banned from using the bot.");
+        }
+
+        @Override
+        public BotState nextState() {
+            return BANNED;
+        }
     };
 
 
