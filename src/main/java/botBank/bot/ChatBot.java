@@ -21,10 +21,6 @@ public class ChatBot extends TelegramLongPollingBot {
 
     private static final Logger LOGGER = LogManager.getLogger(ChatBot.class); //log4j
 
-    private static final String LIST_USERS = "users";
-    private static final String BAN = "ban";
-    private static final String UNBAN = "unban";
-
     private final CardService cardService;
 
     @Value("${bot.name}")
@@ -64,7 +60,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, cardService);
+            BotContext context = BotContext.of(this, user, callbackData, userService, cardService);
             switch (callbackData) {
                 case "/update":
                     user.setStateId(BotState.EnterEmail.ordinal());
@@ -74,7 +70,20 @@ public class ChatBot extends TelegramLongPollingBot {
                     user.setStateId(BotState.AddCard.ordinal());
                     sendMessage(chatId, "You selected to add a card.");
                     break;
+                case "/listusers":
+                   userService.listUsers(context);
+                    break;
+                case "/banuser":
+                    user.setStateId(BotState.BanUser.ordinal());
+                    sendMessage(chatId, "You selected to ban user.");
+                    break;
+                    case "/unbanuser":
+                    user.setStateId(BotState.AddCard.ordinal());
+                    sendMessage(chatId, "You selected to unban user.");
+                    break;
+
                 default:
+                    user.setStateId(BotState.Menu.ordinal());
                     sendMessage(chatId, "Invalid option.");
                     break;
             }
@@ -93,10 +102,8 @@ public class ChatBot extends TelegramLongPollingBot {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, text, cardService);
+            BotContext context = BotContext.of(this, user, text, userService, cardService);
 
-            if (checkIfAdminCommand(user, text))
-                return;
 
             BotState state;
             if (user == null) {
@@ -122,30 +129,7 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
 
-    private boolean checkIfAdminCommand(User user, String text) {
-        if (user == null || !user.isAdmin())
-            return false;
 
-        if (text.equals(LIST_USERS)) {
-            LOGGER.info("Admin command received: " + LIST_USERS);
-            listUsers(user);
-            return true;
-        }
-
-        if (text.startsWith(BAN)) {
-            LOGGER.info("Admin command received: ban");
-            banUser(user, text);
-            return true;
-        }
-
-        if (text.startsWith(UNBAN)) {
-            LOGGER.info("Admin command received: unban");
-            unbanUser(user, text);
-            return true;
-        }
-
-        return false;
-    }
 
 
     private void sendMessage(long chatId, String text) {
@@ -159,19 +143,7 @@ public class ChatBot extends TelegramLongPollingBot {
         }
     }
 
-    private void listUsers(User admin) {
-        StringBuilder sb = new StringBuilder("All users list:\r\n");
-        List<User> users = userService.findAllUsers();
 
-        users.forEach(user -> sb.append(user.getTelegramId())
-                .append(' ')
-                .append(user.getNumber())
-                .append(' ')
-                .append(user.getEmail())
-                .append("\r\n"));
-
-        sendMessage(admin.getTelegramId(), sb.toString());
-    }
 
     private void banUser(User admin, String text) {
         try {

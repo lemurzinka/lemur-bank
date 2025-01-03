@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -164,48 +165,49 @@ public enum BotState {
 
     Menu {
         private BotState next;
+
         @Override
         public void enter(BotContext context) {
-
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
 
             InlineKeyboardButton updateButton = new InlineKeyboardButton("Update Email");
             updateButton.setCallbackData("/update");
             InlineKeyboardButton addCardButton = new InlineKeyboardButton("Add New Card");
             addCardButton.setCallbackData("/addcard");
+            rows.add(List.of(updateButton, addCardButton));
 
-            markup.setKeyboard(List.of(List.of(updateButton, addCardButton)));
+            if (context.getUser().isAdmin()) {
+                InlineKeyboardButton listUsersButton = new InlineKeyboardButton("List Users");
+                listUsersButton.setCallbackData("/listusers");
+                InlineKeyboardButton banUserButton = new InlineKeyboardButton("Ban User");
+                banUserButton.setCallbackData("/banuser");
+                InlineKeyboardButton unbanUserButton = new InlineKeyboardButton("Unban User");
+                unbanUserButton.setCallbackData("/unbanuser");
+                rows.add(List.of(listUsersButton, banUserButton, unbanUserButton));
+            }
 
-
-            sendMessageWithInlineKeyboard (context, "You are in the menu now. Choose an option:", markup);
+            markup.setKeyboard(rows);
+            sendMessageWithInlineKeyboard(context, "You are in the menu now. Choose an option:", markup);
         }
+
 
         @Override
         public void handleInput(BotContext context) {
+            String wrongText = context.getInput();
+            sendMessage(context, "Use buttons.");
 
-            String command = context.getInput().toLowerCase().trim();
-
-            switch (command) {
-                case "/update":
-
-                    next = EnterEmail;
-                    break;
-                case "/addcard":
-
-                    next = AddCard;
-                    break;
-                default:
-                    sendMessage(context, "Invalid command. Please choose again.");
-                    next = Menu;
-                    break;
-            }
+            next = Menu;
         }
+
 
         @Override
         public BotState nextState() {
             return next;
         }
     },
+
 
     AddCard {
 
@@ -245,10 +247,68 @@ public enum BotState {
         public BotState nextState() {
             return BANNED;
         }
+    },
+
+    BanUser {
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Enter user ID to ban:");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            try {
+                long userId = Long.parseLong(context.getInput());
+                User userToBan = context.getUserService().findByTelegramId(userId);
+                if (userToBan != null) {
+                    userToBan.setBanned(true);
+                    context.getUserService().updateUser(userToBan);
+                    sendMessage(context, "User " + userId + " has been banned.");
+                } else {
+                    sendMessage(context, "User not found.");
+                }
+            } catch (NumberFormatException e) {
+                sendMessage(context, "Invalid ID. Please try again.");
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return Menu;
+        }
+    },
+
+    UnbanUser {
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Enter user ID to unban:");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            try {
+                long userId = Long.parseLong(context.getInput());
+                User userToUnban = context.getUserService().findByTelegramId(userId);
+                if (userToUnban != null) {
+                    userToUnban.setBanned(false);
+                    context.getUserService().updateUser(userToUnban);
+                    sendMessage(context, "User " + userId + " has been unbanned.");
+                } else {
+                    sendMessage(context, "User not found.");
+                }
+            } catch (NumberFormatException e) {
+                sendMessage(context, "Invalid ID. Please try again.");
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return Menu;
+        }
     };
 
 
-    protected static void sendMessage(BotContext context, String text) {
+    public static void sendMessage(BotContext context, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(Long.toString(context.getUser().getTelegramId()));
         message.setText(text);
@@ -259,7 +319,9 @@ public enum BotState {
             e.printStackTrace();
         }
 
-    }
+    };
+
+
 
     private static BotState[] states;
     private final boolean inputNeeded;
