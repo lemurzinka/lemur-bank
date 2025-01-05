@@ -210,30 +210,43 @@ public enum BotState {
 
 
     AddCard {
+        private int counterOfInputProblem = 0;
+        private BotState next;
 
         @Override
-        public void enter(BotContext context) {
-            List<BotCommand> commands = List.of();
-            sendMessage(context, "What type of card it should be added (credit, debit)?");
+        public void enter(BotContext context){
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+
+            InlineKeyboardButton creditCard = new InlineKeyboardButton("Credit");
+            creditCard.setCallbackData("credit");
+            InlineKeyboardButton debitCard = new InlineKeyboardButton("Debit");
+            debitCard.setCallbackData("debit");
+            rows.add(List.of(creditCard, debitCard));
+
+
+            markup.setKeyboard(rows);
+            sendMessageWithInlineKeyboard(context, "Chose a type of card:", markup);
         }
 
-        @Override
-        public void handleInput(BotContext context) {
-            String type = context.getInput().toLowerCase().trim();
 
-
-            if (type.equals("credit") || type.equals("debit")) {
-                Card card = context.getCardService().createCard(type.toUpperCase());
-                card.setUser(context.getUser());
-                context.getCardService().addCard(card);
-            }else {
-                sendMessage(context, "Invalid type. Please choose either 'credit' or 'debit'.");
-            }
+    @Override
+    public void handleInput(BotContext context) {
+        String wrongText = context.getInput();
+        counterOfInputProblem ++;
+        if (counterOfInputProblem > 3) {
+            sendMessage(context, "Input problem, return to menu.");
+            next = Menu;
         }
+        sendMessage(context, "Use buttons.");
+
+      next = AddCard;
+    }
 
         @Override
         public BotState nextState() {
-            return Menu;
+            return next;
         }
     },
 

@@ -1,5 +1,6 @@
 package botBank.bot;
 
+import botBank.model.Card;
 import botBank.model.User;
 import botBank.service.CardService;
 import botBank.service.UserService;
@@ -80,8 +81,16 @@ public class ChatBot extends TelegramLongPollingBot {
                     case "/unbanuser":
                     user.setStateId(BotState.AddCard.ordinal());
                     sendMessage(chatId, "You selected to unban user.");
+                case "credit":
+                    Card creditCard = context.getCardService().createCard(callbackData.toUpperCase());
+                    sendMessage(chatId,"You have created a credit card, you can view its data in the menu");
+                    user.setStateId(BotState.Menu.ordinal());
                     break;
-
+                case "debit":
+                    Card debitCard = context.getCardService().createCard(callbackData.toUpperCase());
+                    sendMessage(chatId,"You have created a debit card, you can view its data in the menu");
+                    user.setStateId(BotState.Menu.ordinal());
+                    break;
                 default:
                     user.setStateId(BotState.Menu.ordinal());
                     sendMessage(chatId, "Invalid option.");
