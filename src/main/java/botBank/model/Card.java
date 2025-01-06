@@ -18,8 +18,8 @@ public class Card {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
     @Column(name = "card_number", nullable = false, unique = true, length = 16)
@@ -45,4 +45,15 @@ public class Card {
         }
     }
 
+    @Override
+    public String toString() {
+        return "Card{" +
+                "id=" + id +
+                ", cardNumber='" + cardNumber + '\'' +
+                ", expirationDate=" + expirationDate +
+                ", cvv='" + cvv + '\'' +
+                ", cardType=" + cardType +
+                ", createdAt=" + createdAt +
+                '}';
+    }
 }

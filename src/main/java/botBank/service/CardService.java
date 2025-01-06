@@ -1,11 +1,14 @@
 package botBank.service;
 
+import botBank.bot.BotContext;
 import botBank.model.Card;
 import botBank.model.CardType;
+import botBank.model.User;
 import org.springframework.stereotype.Service;
 import botBank.repo.CardRepository;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Random;
 
 
@@ -55,12 +58,12 @@ public class CardService {
     private String generateCardNumber(String bin) {
         StringBuilder cardNumber = new StringBuilder(bin);
 
-        // Random number by 15 pos
+        // Random digit by 15 pos
         for (int i = bin.length(); i < 15; i++) {
             cardNumber.append(RANDOM.nextInt(10));
         }
 
-        // Control number with Luhn
+        // Control digit with Luhn
         int checkDigit = calculateLuhnCheckDigit(cardNumber.toString());
         cardNumber.append(checkDigit);
 
@@ -86,7 +89,7 @@ public class CardService {
             alternate = !alternate;
         }
 
-        return (10 - (sum % 10)) % 10; // gontrol digit
+        return (10 - (sum % 10)) % 10; // control digit
     }
 
 
@@ -110,6 +113,23 @@ public class CardService {
         card.setCardType(enumType);
 
         return card;
+    }
+
+
+    @Transactional
+    public List<Card> getCardsByUserId(long userId) {
+        return cardRepository.findAllByUserId(userId);
+    }
+    public String formatCardDetails(List<Card> cards) {
+        StringBuilder response = new StringBuilder("Your cards:\n");
+        for (Card card : cards) {
+            response.append("Card Number: ").append(card.getCardNumber())
+                    .append("\nExpiry Date: ").append(card.getExpirationDate())
+                    .append("\nCVV: ").append(card.getCvv())
+                    .append("\nCard Type: ").append(card.getCardType().toString().toLowerCase())
+                    .append("\n-------------------------------------------------------------\n");
+        }
+        return response.toString();
     }
 
 }

@@ -4,16 +4,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,14 +14,16 @@ import java.util.List;
 @Entity
 @Data @NoArgsConstructor
 @Table(name = "user")
-public class User {
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Card> cards;
 
     @Column(nullable = false, name = "telegram_id", unique = true)
@@ -82,8 +77,19 @@ public class User {
         this.isAdmin = isAdmin;
     }
 
-
-
-
-
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", telegramId=" + telegramId +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", number='" + number + '\'' +
+                ", email='" + email + '\'' +
+                ", createdAt=" + createdAt +
+                ", isAdmin=" + isAdmin +
+                ", stateId=" + stateId +
+                ", isBanned=" + isBanned +
+                '}';
+    }
 }

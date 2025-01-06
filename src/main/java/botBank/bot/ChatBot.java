@@ -49,6 +49,8 @@ public class ChatBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+
+
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             String callbackData = callbackQuery.getData();
@@ -83,14 +85,29 @@ public class ChatBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "You selected to unban user.");
                 case "credit":
                     Card creditCard = context.getCardService().createCard(callbackData.toUpperCase());
+                    creditCard.setUser(user);
+                    context.getCardService().addCard(creditCard);
                     sendMessage(chatId,"You have created a credit card, you can view its data in the menu");
                     user.setStateId(BotState.Menu.ordinal());
                     break;
                 case "debit":
                     Card debitCard = context.getCardService().createCard(callbackData.toUpperCase());
+                    debitCard.setUser(user);
+                    context.getCardService().addCard(debitCard);
                     sendMessage(chatId,"You have created a debit card, you can view its data in the menu");
                     user.setStateId(BotState.Menu.ordinal());
                     break;
+
+                case "/mycards":
+                    List<Card> userCards = cardService.getCardsByUserId(user.getId());
+                    if (userCards.isEmpty()) {
+                        sendMessage(chatId, "You have no cards.");
+                    } else {
+                        String response = cardService.formatCardDetails(userCards);
+                        sendMessage(chatId, response.toString());
+                    }
+                    break;
+
                 default:
                     user.setStateId(BotState.Menu.ordinal());
                     sendMessage(chatId, "Invalid option.");
@@ -102,29 +119,37 @@ public class ChatBot extends TelegramLongPollingBot {
             BotState state = BotState.byId(user.getStateId());
             state.enter(context);
         } else if (update.hasMessage() && update.getMessage().hasText()) {
+
             final String text = update.getMessage().getText();
             final long chatId = update.getMessage().getChatId();
 
-            User user = userService.findByTelegramId(chatId);
-            if (user != null && user.isBanned()) {
-                sendMessage(chatId, "You are banned. Please contact support.");
-                return;
-            }
 
+
+            User user = userService.findByTelegramId(chatId);
             BotContext context = BotContext.of(this, user, text, userService, cardService);
 
 
             BotState state;
+
             if (user == null) {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
+                context = BotContext.of(this, user, text, userService, cardService);
 
                 state.enter(context);
             } else {
                 state = BotState.byId(user.getStateId());
                 state.handleInput(context);
             }
+
+
+
+            if (user.isBanned()) {
+                sendMessage(chatId, "You are banned. Please contact support.");
+                return;
+            }
+
 
             do {
                 state = state.nextState();
@@ -137,10 +162,6 @@ public class ChatBot extends TelegramLongPollingBot {
     }
 
 
-
-
-
-
     private void sendMessage(long chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(Long.toString(chatId));
@@ -151,64 +172,6 @@ public class ChatBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-
-
-
-    private void banUser(User admin, String text) {
-        try {
-            String[] commandParts = text.split(" ");
-            if (commandParts.length != 2) {
-                sendMessage(admin.getTelegramId(), "Invalid command format. Usage: ban <telegram_id>");
-                return;
-            }
-
-            long telegramIdToBan = Long.parseLong(commandParts[1]);
-
-            User userToBan = userService.findByTelegramId(telegramIdToBan);
-            if (userToBan == null) {
-                sendMessage(admin.getTelegramId(), "User not found.");
-                return;
-            }
-
-            userToBan.setBanned(true);
-            userService.updateUser(userToBan);
-
-            sendMessage(admin.getTelegramId(), "User " + telegramIdToBan + " has been banned.");
-
-
-            userToBan.setStateId(BotState.BANNED.ordinal());
-            userService.updateUser(userToBan);
-        } catch (NumberFormatException e) {
-            sendMessage(admin.getTelegramId(), "Invalid telegram_id format.");
-        }
-    }
-
-    private void unbanUser(User admin, String text) {
-        try {
-            String[] commandParts = text.split(" ");
-            if (commandParts.length != 2) {
-                sendMessage(admin.getTelegramId(), "Invalid command format. Usage: unban <telegram_id>");
-                return;
-            }
-
-            long telegramIdToUnban = Long.parseLong(commandParts[1]);
-
-            User userToUnban = userService.findByTelegramId(telegramIdToUnban);
-            if (userToUnban == null) {
-                sendMessage(admin.getTelegramId(), "User not found.");
-                return;
-            }
-
-            userToUnban.setBanned(false);
-            userService.updateUser(userToUnban);
-
-            sendMessage(admin.getTelegramId(), "User " + telegramIdToUnban + " has been unbanned.");
-
-        } catch (NumberFormatException e) {
-            sendMessage(admin.getTelegramId(), "Invalid telegram_id format.");
-        }
-    }
-
 
 
 }

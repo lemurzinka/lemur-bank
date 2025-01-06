@@ -176,7 +176,9 @@ public enum BotState {
             updateButton.setCallbackData("/update");
             InlineKeyboardButton addCardButton = new InlineKeyboardButton("Add New Card");
             addCardButton.setCallbackData("/addcard");
-            rows.add(List.of(updateButton, addCardButton));
+            InlineKeyboardButton myCardsButton = new InlineKeyboardButton("My cards");
+            myCardsButton.setCallbackData("/mycards");
+            rows.add(List.of(updateButton, addCardButton, myCardsButton));
 
             if (context.getUser().isAdmin()) {
                 InlineKeyboardButton listUsersButton = new InlineKeyboardButton("List Users");
