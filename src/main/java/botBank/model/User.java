@@ -22,13 +22,15 @@ public class User implements Serializable {
     private Long id;
 
 
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Card> cards;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Account> accounts;
+
+
     @Column(nullable = false, name = "telegram_id", unique = true)
     private Long telegramId;
-
 
 
     @Column( name = "first_name")

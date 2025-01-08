@@ -1,7 +1,9 @@
 package botBank.bot;
 
+import botBank.model.Account;
 import botBank.model.Card;
 import botBank.model.User;
+import botBank.service.AccountService;
 import botBank.service.CardService;
 import botBank.service.UserService;
 import org.apache.logging.log4j.Logger;
@@ -22,7 +24,9 @@ public class ChatBot extends TelegramLongPollingBot {
 
     private static final Logger LOGGER = LogManager.getLogger(ChatBot.class); //log4j
 
+    private final UserService userService;
     private final CardService cardService;
+    private final AccountService accountService;
 
     @Value("${bot.name}")
     private String botName;
@@ -30,11 +34,12 @@ public class ChatBot extends TelegramLongPollingBot {
     @Value("${bot.token}")
     private String botToken;
 
-    private final UserService userService;
 
-    public ChatBot(UserService userService, CardService cardService) {
+
+    public ChatBot(UserService userService, CardService cardService, AccountService accountService) {
         this.userService = userService;
         this.cardService = cardService;
+        this.accountService = accountService;
     }
 
     @Override
@@ -63,7 +68,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, userService, cardService);
+            BotContext context = BotContext.of(this, user, callbackData, userService, cardService, accountService);
             switch (callbackData) {
                 case "/update":
                     user.setStateId(BotState.EnterEmail.ordinal());
@@ -85,14 +90,20 @@ public class ChatBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "You selected to unban user.");
                 case "credit":
                     Card creditCard = context.getCardService().createCard(callbackData.toUpperCase());
+                    Account accountCredit = context.getAccountService().createAccount(user);
+                    context.getAccountService().verifyAndSaveAccount(accountCredit);
                     creditCard.setUser(user);
+                    creditCard.setAccount(accountCredit);
                     context.getCardService().addCard(creditCard);
                     sendMessage(chatId,"You have created a credit card, you can view its data in the menu");
                     user.setStateId(BotState.Menu.ordinal());
                     break;
                 case "debit":
                     Card debitCard = context.getCardService().createCard(callbackData.toUpperCase());
+                    Account accountDebit = context.getAccountService().createAccount(user);
+                    context.getAccountService().verifyAndSaveAccount(accountDebit);
                     debitCard.setUser(user);
+                    debitCard.setAccount(accountDebit);
                     context.getCardService().addCard(debitCard);
                     sendMessage(chatId,"You have created a debit card, you can view its data in the menu");
                     user.setStateId(BotState.Menu.ordinal());
@@ -126,7 +137,7 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
             User user = userService.findByTelegramId(chatId);
-            BotContext context = BotContext.of(this, user, text, userService, cardService);
+            BotContext context = BotContext.of(this, user, text, userService, cardService, accountService);
 
 
             BotState state;
@@ -135,7 +146,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
-                context = BotContext.of(this, user, text, userService, cardService);
+                context = BotContext.of(this, user, text, userService, cardService, accountService);
 
                 state.enter(context);
             } else {

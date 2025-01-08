@@ -1,6 +1,6 @@
 package botBank.bot;
 
-import botBank.model.Card;
+
 import botBank.model.User;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;

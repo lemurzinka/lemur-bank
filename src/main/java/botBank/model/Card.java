@@ -4,7 +4,19 @@ package botBank.model;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -21,6 +33,10 @@ public class Card {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "account_id", referencedColumnName = "id", nullable = false)
+    private Account account;
 
     @Column(name = "card_number", nullable = false, unique = true, length = 16)
     private String cardNumber;
