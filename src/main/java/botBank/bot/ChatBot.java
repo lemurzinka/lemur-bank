@@ -4,6 +4,7 @@ import botBank.model.Account;
 import botBank.model.Card;
 import botBank.model.User;
 import botBank.service.AccountService;
+import botBank.service.CardAccountService;
 import botBank.service.CardService;
 import botBank.service.UserService;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +17,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -26,7 +29,7 @@ public class ChatBot extends TelegramLongPollingBot {
 
     private final UserService userService;
     private final CardService cardService;
-    private final AccountService accountService;
+    private final CardAccountService cardAccountService;
 
     @Value("${bot.name}")
     private String botName;
@@ -36,10 +39,10 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
 
-    public ChatBot(UserService userService, CardService cardService, AccountService accountService) {
+    public ChatBot(UserService userService, CardService cardService, AccountService accountService, CardAccountService cardAccountService) {
         this.userService = userService;
         this.cardService = cardService;
-        this.accountService = accountService;
+        this.cardAccountService = cardAccountService;
     }
 
     @Override
@@ -68,7 +71,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, userService, cardService, accountService);
+            BotContext context = BotContext.of(this, user, callbackData, userService, cardService, cardAccountService);
             switch (callbackData) {
                 case "/update":
                     user.setStateId(BotState.EnterEmail.ordinal());
@@ -79,49 +82,36 @@ public class ChatBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "You selected to add a card.");
                     break;
                 case "/listusers":
-                   userService.listUsers(context);
+                    userService.listUsers(context);
                     break;
                 case "/banuser":
                     user.setStateId(BotState.BanUser.ordinal());
                     sendMessage(chatId, "You selected to ban user.");
                     break;
-                    case "/unbanuser":
+                case "/unbanuser":
                     user.setStateId(BotState.AddCard.ordinal());
                     sendMessage(chatId, "You selected to unban user.");
                 case "credit":
-                    Card creditCard = context.getCardService().createCard(callbackData.toUpperCase());
-                    Account accountCredit = context.getAccountService().createAccount(user);
-                    context.getAccountService().verifyAndSaveAccount(accountCredit);
-                    creditCard.setUser(user);
-                    creditCard.setAccount(accountCredit);
-                    context.getCardService().addCard(creditCard);
-                    sendMessage(chatId,"You have created a credit card, you can view its data in the menu");
+                    context.getCardAccountService().createCreditCardAndAccount(user, BigDecimal.valueOf(5000), "UAH", context);
                     user.setStateId(BotState.Menu.ordinal());
                     break;
                 case "debit":
-                    Card debitCard = context.getCardService().createCard(callbackData.toUpperCase());
-                    Account accountDebit = context.getAccountService().createAccount(user);
-                    context.getAccountService().verifyAndSaveAccount(accountDebit);
-                    debitCard.setUser(user);
-                    debitCard.setAccount(accountDebit);
-                    context.getCardService().addCard(debitCard);
-                    sendMessage(chatId,"You have created a debit card, you can view its data in the menu");
+                    sendMessage(chatId, "You selected to add a debit card.");
+                    user.setStateId(BotState.ChoseCurrency.ordinal());
+                    break;
+                case "UAH":
+                case "USD":
+                case "EUR":
+                    context.getCardAccountService().createDebitCardAndAccount(user, callbackData, context);
                     user.setStateId(BotState.Menu.ordinal());
                     break;
 
                 case "/mycards":
-                    List<Card> userCards = cardService.getCardsByUserId(user.getId());
-                    if (userCards.isEmpty()) {
-                        sendMessage(chatId, "You have no cards.");
-                    } else {
-                        String response = cardService.formatCardDetails(userCards);
-                        sendMessage(chatId, response.toString());
-                    }
+                    displayUserCards(user, chatId);
                     break;
 
                 default:
-                    user.setStateId(BotState.Menu.ordinal());
-                    sendMessage(chatId, "Invalid option.");
+                    updateUserState(user, BotState.Menu, "Invalid option.");
                     break;
             }
 
@@ -137,7 +127,7 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
             User user = userService.findByTelegramId(chatId);
-            BotContext context = BotContext.of(this, user, text, userService, cardService, accountService);
+            BotContext context = BotContext.of(this, user, text, userService, cardService, cardAccountService);
 
 
             BotState state;
@@ -146,7 +136,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
-                context = BotContext.of(this, user, text, userService, cardService, accountService);
+                context = BotContext.of(this, user, text, userService, cardService, cardAccountService);
 
                 state.enter(context);
             } else {
@@ -184,5 +174,20 @@ public class ChatBot extends TelegramLongPollingBot {
         }
     }
 
+
+    private void updateUserState(User user, BotState state, String message) {
+        user.setStateId(state.ordinal());
+        sendMessage(user.getTelegramId(), message);
+    }
+
+
+    private void displayUserCards(User user, long chatId) {
+        List<Card> userCards = cardService.getCardsByUserId(user.getId());
+        if (userCards.isEmpty()) {
+            sendMessage(chatId, "You have no cards.");
+        } else {
+            sendMessage(chatId, cardService.formatCardDetails(userCards));
+        }
+    }
 
 }

@@ -40,8 +40,11 @@ public class Account {
     @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
 
-    @Column(name = "balance", nullable = false)
-    private BigDecimal balance = BigDecimal.ZERO;
+    @Column(name = "balance", nullable = true)
+    private BigDecimal balance;
+
+    @Column(name = "current_balance", nullable = false)
+    private BigDecimal currentBalance = BigDecimal.ZERO;
 
     @Column(name = "currency", nullable = false, length = 3)
     private String currency;

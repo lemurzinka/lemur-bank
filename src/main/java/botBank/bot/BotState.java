@@ -21,8 +21,8 @@ public enum BotState {
         @Override
         public void enter(BotContext context) {
 
-                sendMessage(context, "Welcome!\n" +
-                        "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
+            sendMessage(context, "Welcome!\n" +
+                    "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
         }
 
         @Override
@@ -60,8 +60,8 @@ public enum BotState {
             }
             isWrongPhone = false;
             counterOfInputProblem = 0;
-                context.getUser().setNumber(phoneNumber);
-                sendMessage(context, "Phone number saved.");
+            context.getUser().setNumber(phoneNumber);
+            sendMessage(context, "Phone number saved.");
 
         }
 
@@ -233,18 +233,18 @@ public enum BotState {
         }
 
 
-    @Override
-    public void handleInput(BotContext context) {
-        String wrongText = context.getInput();
-        counterOfInputProblem ++;
-        if (counterOfInputProblem > 3) {
-            sendMessage(context, "Input problem, return to menu.");
-            next = Menu;
-        }
-        sendMessage(context, "Use buttons.");
+        @Override
+        public void handleInput(BotContext context) {
+            String wrongText = context.getInput();
+            counterOfInputProblem ++;
+            if (counterOfInputProblem > 3) {
+                sendMessage(context, "Input problem, return to menu.");
+                next = Menu;
+            }
+            sendMessage(context, "Use buttons.");
 
-      next = AddCard;
-    }
+            next = AddCard;
+        }
 
         @Override
         public BotState nextState() {
@@ -320,6 +320,48 @@ public enum BotState {
         public BotState nextState() {
             return Menu;
         }
+    },
+
+    ChoseCurrency {
+        private int counterOfInputProblem = 0;
+        private BotState next;
+
+        @Override
+        public void enter(BotContext context){
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+
+            InlineKeyboardButton uahCurrency = new InlineKeyboardButton("UAH");
+            uahCurrency.setCallbackData("UAH");
+            InlineKeyboardButton usdCurrency = new InlineKeyboardButton("USD");
+            usdCurrency.setCallbackData("USD");
+            InlineKeyboardButton eurCurrency = new InlineKeyboardButton("EUR");
+            eurCurrency.setCallbackData("EUR");
+            rows.add(List.of(uahCurrency, usdCurrency, eurCurrency));
+
+
+            markup.setKeyboard(rows);
+            sendMessageWithInlineKeyboard(context, "What should be the currency of the card?:", markup);
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String wrongText = context.getInput();
+            counterOfInputProblem ++;
+            if (counterOfInputProblem > 3) {
+                sendMessage(context, "Input problem, return to menu.");
+                next = Menu;
+            }
+            sendMessage(context, "Use buttons.");
+
+            next = ChoseCurrency;
+        }
+        @Override
+        public BotState nextState() {
+            return next;
+        }
+
     };
 
 

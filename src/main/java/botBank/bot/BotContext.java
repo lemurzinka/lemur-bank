@@ -2,6 +2,7 @@ package botBank.bot;
 
 import botBank.model.User;
 import botBank.service.AccountService;
+import botBank.service.CardAccountService;
 import botBank.service.CardService;
 import botBank.service.UserService;
 
@@ -11,21 +12,22 @@ public class BotContext {
     private final String input;
     private final UserService userService;
     private final CardService cardService;
-    private final AccountService accountService;
+    private final CardAccountService cardAccountService;
 
-    public static BotContext of(ChatBot bot, User user, String text, UserService userService, CardService cardService, AccountService accountService) {
-        return new BotContext(bot, user, text, userService, cardService, accountService);
+
+    public static BotContext of(ChatBot bot, User user, String text, UserService userService, CardService cardService, CardAccountService cardAccountService) {
+        return new BotContext(bot, user, text, userService, cardService, cardAccountService);
     }
 
 
 
-    private BotContext(ChatBot bot, User user, String input,UserService userService, CardService cardService, AccountService accountService) {
+    private BotContext(ChatBot bot, User user, String input,UserService userService, CardService cardService, CardAccountService cardAccountService) {
         this.bot = bot;
         this.user = user;
         this.input = input;
         this.userService = userService;
         this.cardService = cardService;
-        this.accountService = accountService;
+        this.cardAccountService = cardAccountService;
     }
 
 
@@ -50,7 +52,8 @@ public class BotContext {
         return userService;
     }
 
-    public AccountService getAccountService() {
-        return accountService;
+    public CardAccountService getCardAccountService() {
+        return cardAccountService;
     }
+
 }

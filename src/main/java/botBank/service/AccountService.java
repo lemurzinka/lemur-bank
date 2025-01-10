@@ -62,11 +62,7 @@ public class AccountService {
 
         Account account = new Account();
         account.setAccountNumber(generateAccountNumber());
-        account.setBalance(BigDecimal.ZERO);
-        account.setCurrency("USD");
         account.setUser(user);
-
-
 
         return account;
     }
