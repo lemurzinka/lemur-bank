@@ -1,16 +1,12 @@
 package botBank.service;
 
-import botBank.bot.BotContext;
-import botBank.model.Account;
+
 import botBank.model.Card;
 import botBank.model.CardType;
-import botBank.model.User;
-import botBank.repo.AccountRepository;
 import org.springframework.stereotype.Service;
 import botBank.repo.CardRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
@@ -139,6 +135,7 @@ public class CardService {
                     .append("\nExpiry Date: ").append(card.getExpirationDate())
                     .append("\nCVV: ").append(card.getCvv())
                     .append("\nCard Type: ").append(card.getCardType().toString().toLowerCase())
+                    .append("\nBalance: "+card.getAccount().getCurrentBalance())
                     .append("\n-------------------------------------------------------------\n");
         }
         return response.toString();

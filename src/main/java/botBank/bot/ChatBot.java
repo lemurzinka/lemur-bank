@@ -3,10 +3,8 @@ package botBank.bot;
 import botBank.model.Account;
 import botBank.model.Card;
 import botBank.model.User;
-import botBank.service.AccountService;
-import botBank.service.CardAccountService;
-import botBank.service.CardService;
-import botBank.service.UserService;
+import botBank.retrievers.RateRetriever;
+import botBank.service.*;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +18,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @PropertySource("classpath:telegram.properties")
@@ -30,6 +29,7 @@ public class ChatBot extends TelegramLongPollingBot {
     private final UserService userService;
     private final CardService cardService;
     private final CardAccountService cardAccountService;
+    private final CurrencyRateService rateService;
 
     @Value("${bot.name}")
     private String botName;
@@ -39,10 +39,11 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
 
-    public ChatBot(UserService userService, CardService cardService, AccountService accountService, CardAccountService cardAccountService) {
+    public ChatBot(UserService userService, CardService cardService, CardAccountService cardAccountService, CurrencyRateService rateService) {
         this.userService = userService;
         this.cardService = cardService;
         this.cardAccountService = cardAccountService;
+        this.rateService = rateService;
     }
 
     @Override
@@ -109,6 +110,12 @@ public class ChatBot extends TelegramLongPollingBot {
                 case "/mycards":
                     displayUserCards(user, chatId);
                     break;
+
+                case "/rates":
+                    String rateMessage = rateService.getFormattedRates();
+                    sendMessage(chatId, rateMessage);
+                    break;
+
 
                 default:
                     updateUserState(user, BotState.Menu, "Invalid option.");
