@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 import botBank.repo.CardRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.text.html.Option;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 
@@ -22,7 +24,10 @@ public class CardService {
     private final CardRepository cardRepository;
 
 
-
+    @Transactional
+    public Optional<Card> findByCardNumber (String cardNumber){
+     return cardRepository.findByCardNumber(cardNumber);
+    }
 
     public CardService(CardRepository cardRepository) {
         this.cardRepository = cardRepository;

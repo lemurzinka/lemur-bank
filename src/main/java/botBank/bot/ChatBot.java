@@ -1,9 +1,8 @@
 package botBank.bot;
 
-import botBank.model.Account;
 import botBank.model.Card;
+import botBank.model.TransactionDetail;
 import botBank.model.User;
-import botBank.retrievers.RateRetriever;
 import botBank.service.*;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +29,8 @@ public class ChatBot extends TelegramLongPollingBot {
     private final CardService cardService;
     private final CardAccountService cardAccountService;
     private final CurrencyRateService rateService;
+    private final TransactionService transactionService;
+    private final AccountService accountService;
 
     @Value("${bot.name}")
     private String botName;
@@ -39,11 +40,14 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
 
-    public ChatBot(UserService userService, CardService cardService, CardAccountService cardAccountService, CurrencyRateService rateService) {
+    public ChatBot(UserService userService, CardService cardService, CardAccountService cardAccountService, CurrencyRateService rateService, TransactionService transactionService,
+    AccountService accountService) {
         this.userService = userService;
         this.cardService = cardService;
         this.cardAccountService = cardAccountService;
         this.rateService = rateService;
+        this.transactionService = transactionService;
+        this.accountService = accountService;
     }
 
     @Override
@@ -72,7 +76,8 @@ public class ChatBot extends TelegramLongPollingBot {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, userService, cardService, cardAccountService);
+            BotContext context = BotContext.of(this, user, callbackData, userService, cardService, cardAccountService,
+                    transactionService, accountService, rateService);
             switch (callbackData) {
                 case "/update":
                     user.setStateId(BotState.EnterEmail.ordinal());
@@ -116,6 +121,11 @@ public class ChatBot extends TelegramLongPollingBot {
                     sendMessage(chatId, rateMessage);
                     break;
 
+                case "/send":
+                    TransactionDetail transactionDetail = new TransactionDetail();
+                    user.setTransactionDetail(transactionDetail);
+                    user.setStateId(BotState.EnterCardNumberForTransaction.ordinal());
+                    break;
 
                 default:
                     updateUserState(user, BotState.Menu, "Invalid option.");
@@ -134,7 +144,8 @@ public class ChatBot extends TelegramLongPollingBot {
 
 
             User user = userService.findByTelegramId(chatId);
-            BotContext context = BotContext.of(this, user, text, userService, cardService, cardAccountService);
+            BotContext context = BotContext.of(this, user, text, userService, cardService, cardAccountService, transactionService,
+                    accountService, rateService);
 
 
             BotState state;
@@ -143,7 +154,8 @@ public class ChatBot extends TelegramLongPollingBot {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
-                context = BotContext.of(this, user, text, userService, cardService, cardAccountService);
+                context = BotContext.of(this, user, text, userService, cardService, cardAccountService, transactionService,
+                        accountService, rateService);
 
                 state.enter(context);
             } else {

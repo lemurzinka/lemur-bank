@@ -18,6 +18,10 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
+    @Transactional
+    public void saveAccount(Account account){
+        accountRepository.save(account);
+    }
 
     @Transactional
     public void verifyAndSaveAccount(Account account) {

@@ -6,6 +6,7 @@ import botBank.model.Card;
 import botBank.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -16,6 +17,10 @@ public class CardAccountService {
 
     private final CardService cardService;
     private final AccountService accountService;
+
+
+
+
 
     @Autowired
     public CardAccountService(CardService cardService, AccountService accountService) {

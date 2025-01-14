@@ -60,6 +60,9 @@ public class User implements Serializable {
     @Column(name = "is_banned", nullable = false)
     private boolean isBanned = false;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "transaction_detail_id")
+    private TransactionDetail transactionDetail;
 
     @PrePersist
     public void prePersist() {

@@ -1,15 +1,22 @@
 package botBank.bot;
 
 
-import botBank.model.User;
+import botBank.model.*;
+import botBank.service.CurrencyRateService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 public enum BotState {
@@ -64,6 +71,7 @@ public enum BotState {
             sendMessage(context, "Phone number saved.");
 
         }
+
 
         @Override
         public BotState nextState() {
@@ -180,7 +188,9 @@ public enum BotState {
             myCardsButton.setCallbackData("/mycards");
             InlineKeyboardButton exchangeRate = new InlineKeyboardButton("Exchange rate");
             exchangeRate.setCallbackData("/rates");
-            rows.add(List.of(updateButton, addCardButton, myCardsButton, exchangeRate));
+            InlineKeyboardButton sendMoney = new InlineKeyboardButton("Send money");
+            sendMoney.setCallbackData("/send");
+            rows.add(List.of(updateButton, addCardButton, myCardsButton, exchangeRate, sendMoney));
 
             if (context.getUser().isAdmin()) {
                 InlineKeyboardButton listUsersButton = new InlineKeyboardButton("List Users");
@@ -364,8 +374,203 @@ public enum BotState {
             return next;
         }
 
-    };
+    },
 
+EnterCardNumberForTransaction {
+    @Override
+    public void enter(BotContext context) {
+        sendMessage(context, "Please, enter your card number for transaction");
+    }
+
+    @Override
+    public void handleInput(BotContext context) {
+        String cardNumber = context.getInput();
+        context.getUser().getTransactionDetail().setSenderCardNumber(cardNumber);
+    }
+
+    @Override
+    public BotState nextState() {
+        return EnterCVVForTransaction;
+    }
+
+},
+
+
+    EnterCVVForTransaction {
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please, enter your CVV for transaction");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String CVV = context.getInput();
+            context.getUser().getTransactionDetail().setSenderCvv(CVV);
+        }
+
+        @Override
+        public BotState nextState() {
+
+            return EnterCardExpDateForTransaction;
+        }
+
+    },
+
+    EnterCardExpDateForTransaction{
+
+
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please, enter expiration date of your card for transaction (Format: yyyy-MM-dd)");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String expDate = context.getInput();
+
+            context.getUser().getTransactionDetail().setSenderExpDate(expDate);
+        }
+
+        @Override
+        public BotState nextState() {
+            return EnterRecipientCardNumberForTransaction;
+        }
+    },
+
+
+    EnterRecipientCardNumberForTransaction{
+
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please, enter recipient card number for transaction");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String cardNumber = context.getInput();
+            context.getUser().getTransactionDetail().setRecipientCardNumber(cardNumber);
+        }
+
+        @Override
+        public BotState nextState() {
+            return EnterAmountForTransactionAndMakeTransaction;
+        }
+    },
+
+
+    EnterAmountForTransactionAndMakeTransaction{
+
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please, enter amount for transaction (e.g., 100.50)");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String amountStr = context.getInput();
+            try {
+                BigDecimal senderAmount = new BigDecimal(amountStr);
+                if (senderAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    sendMessage(context, "The amount must be greater than zero. Please, try again.");
+                    return;
+                }
+                context.getUser().getTransactionDetail().setAmount(senderAmount);
+                String senderCardNumber = context.getUser().getTransactionDetail().getSenderCardNumber();
+                String senderCvv = context.getUser().getTransactionDetail().getSenderCvv();
+                String senderExpDateStr = context.getUser().getTransactionDetail().getSenderExpDate();
+                String recipientCardNumber = context.getUser().getTransactionDetail().getRecipientCardNumber();
+
+
+                LocalDate senderExpDate;
+                try {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    senderExpDate = LocalDate.parse(senderExpDateStr, formatter);
+                } catch (DateTimeParseException e) {
+                    sendMessage(context, "Invalid expiration date format. Use yyyy-MM-dd.");
+                    return;
+                }
+
+
+                Optional<Card> senderCardOpt = context.getCardService().findByCardNumber(senderCardNumber);
+                if (senderCardOpt.isEmpty() ||
+                        !senderCardOpt.get().getCvv().equals(senderCvv) ||
+                        !senderCardOpt.get().getExpirationDate().equals(senderExpDate)) {
+                    sendMessage(context, "Sender card details are invalid or not found.");
+                    return;
+                }
+
+                Account senderAccount = senderCardOpt.get().getAccount();
+                if (senderAccount.getCurrentBalance().compareTo(senderAmount) < 0) {
+                    sendMessage(context, "Insufficient funds on sender's account.");
+                    return;
+                }
+
+
+                Optional<Card> recipientCardOpt = context.getCardService().findByCardNumber(recipientCardNumber);
+                Account recipientAccount = recipientCardOpt.map(Card::getAccount).orElse(null);
+
+                BigDecimal recipientAmount = senderAmount;
+                String senderCurrency = senderAccount.getCurrency();
+                String recipientCurrency = recipientAccount != null ? recipientAccount.getCurrency() : null;
+
+                if (recipientAccount != null && !senderCurrency.equals(recipientCurrency)) {
+
+                    CurrencyRateService rateService = context.getCurrencyRateService();
+                    Double rate = rateService.getRate(senderCurrency, recipientCurrency);
+                    if (rate != null) {
+                        recipientAmount = senderAmount.multiply(BigDecimal.valueOf(rate));
+                    } else {
+                        sendMessage(context, "Currency conversion rate is unavailable.");
+                        return;
+                    }
+                }
+
+
+                senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
+                context.getAccountService().saveAccount(senderAccount);
+
+                if (recipientAccount != null) {
+                    recipientAccount.setCurrentBalance(recipientAccount.getCurrentBalance().add(recipientAmount));
+                    context.getAccountService().saveAccount(recipientAccount);
+                }
+
+
+                Transaction senderTransaction = new Transaction();
+                senderTransaction.setAccount(senderAccount);
+                senderTransaction.setTransactionType(TransactionType.TRANSFER);
+                senderTransaction.setAmount(senderAmount.negate());
+                senderTransaction.setTransactionDate(LocalDateTime.now());
+
+                if (recipientAccount != null) {
+                    senderTransaction.setRecipientAccount(recipientAccount);
+                } else {
+                    senderTransaction.setRecipientDetails("External recipient: " + recipientCardNumber);
+                }
+                context.getTransactionService().saveTransaction(senderTransaction);
+
+
+                if (recipientAccount != null) {
+                    Transaction recipientTransaction = new Transaction();
+                    recipientTransaction.setAccount(recipientAccount);
+                    recipientTransaction.setTransactionType(TransactionType.DEPOSIT);
+                    recipientTransaction.setAmount(recipientAmount);
+                    recipientTransaction.setTransactionDate(LocalDateTime.now());
+                    recipientTransaction.setRecipientAccount(senderAccount);
+                    context.getTransactionService().saveTransaction(recipientTransaction);
+                }
+
+                sendMessage(context, "Transaction is successful.");
+            } catch (NumberFormatException e) {
+                sendMessage(context, "Invalid amount format. Please, enter a valid number (e.g., 100.50).");
+            }
+        }
+
+
+        @Override
+        public BotState nextState() {
+            return Menu;
+        }
+    };
 
     public static void sendMessage(BotContext context, String text) {
         SendMessage message = new SendMessage();
