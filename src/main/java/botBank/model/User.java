@@ -64,6 +64,7 @@ public class User implements Serializable {
     @JoinColumn(name = "transaction_detail_id")
     private TransactionDetail transactionDetail;
 
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
