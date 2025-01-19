@@ -64,6 +64,9 @@ public class User implements Serializable {
     @JoinColumn(name = "transaction_detail_id")
     private TransactionDetail transactionDetail;
 
+    @Column(name = "password", nullable = true)
+    private String password;
+
 
     @PrePersist
     public void prePersist() {

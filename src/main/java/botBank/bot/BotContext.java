@@ -1,7 +1,5 @@
 package botBank.bot;
 
-
-import botBank.model.TransactionDetail;
 import botBank.model.User;
 import botBank.service.*;
 
@@ -13,40 +11,30 @@ public class BotContext {
     private final CardService cardService;
     private final CardAccountService cardAccountService;
     private final TransactionService transactionService;
-    private  final  AccountService accountService;
-    private  final  CurrencyRateService currencyRateService;
+    private final AccountService accountService;
+    private final CurrencyRateService currencyRateService;
+    private final Integer messageId;
 
-
-
-
-
-
-
-    public static BotContext of(ChatBot bot, User user, String text, UserService userService,
+    public static BotContext of(ChatBot bot, User user, String text, Integer messageId, UserService userService,
                                 CardService cardService, CardAccountService cardAccountService, TransactionService transactionService,
-                                AccountService accountService, CurrencyRateService rateService
-                            ) {
-        return new BotContext(bot, user, text, userService, cardService, cardAccountService, transactionService, accountService, rateService);
+                                AccountService accountService, CurrencyRateService rateService) {
+        return new BotContext(bot, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, rateService);
     }
 
-
-    private BotContext(ChatBot bot, User user, String input, UserService userService,
+    private BotContext(ChatBot bot, User user, String input, Integer messageId, UserService userService,
                        CardService cardService, CardAccountService cardAccountService, TransactionService transactionService,
-                       AccountService accountService, CurrencyRateService rateService
-                       ) {
+                       AccountService accountService, CurrencyRateService rateService) {
         this.bot = bot;
         this.user = user;
         this.input = input;
+        this.messageId = messageId;
         this.userService = userService;
         this.cardService = cardService;
         this.cardAccountService = cardAccountService;
         this.transactionService = transactionService;
         this.accountService = accountService;
         this.currencyRateService = rateService;
-
-
     }
-
 
     public ChatBot getBot() {
         return bot;
@@ -60,19 +48,21 @@ public class BotContext {
         return input;
     }
 
-
-    public CardService getCardService() {
-        return cardService;
+    public Integer getMessageId() {
+        return messageId;
     }
 
     public UserService getUserService() {
         return userService;
     }
 
+    public CardService getCardService() {
+        return cardService;
+    }
+
     public CardAccountService getCardAccountService() {
         return cardAccountService;
     }
-
 
     public TransactionService getTransactionService() {
         return transactionService;

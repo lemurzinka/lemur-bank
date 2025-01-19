@@ -4,6 +4,7 @@ package botBank.bot;
 import botBank.model.*;
 import botBank.service.CurrencyRateService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -161,14 +162,15 @@ public enum BotState {
             user.setLastName(lastName);
 
 
-            sendMessage(context, "Last name saved. Next state is menu");
+            sendMessage(context, "Last name saved. Next state is password");
         }
 
         @Override
         public BotState nextState() {
-            return Menu;
+            return EnterPassword;
         }
     },
+
 
 
     Menu {
@@ -376,30 +378,28 @@ public enum BotState {
 
     },
 
-EnterCardNumberForTransaction {
-    @Override
-    public void enter(BotContext context) {
-        sendMessage(context, "Please, enter your card number for transaction");
-    }
+    EnterCardNumberForTransaction {
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please, enter your card number for transaction:");
+        }
 
-    @Override
-    public void handleInput(BotContext context) {
-        String cardNumber = context.getInput();
-        context.getUser().getTransactionDetail().setSenderCardNumber(cardNumber);
-    }
+        @Override
+        public void handleInput(BotContext context) {
+            String cardNumber = context.getInput();
+            context.getUser().getTransactionDetail().setSenderCardNumber(cardNumber);
+        }
 
-    @Override
-    public BotState nextState() {
-        return EnterCVVForTransaction;
-    }
-
-},
-
+        @Override
+        public BotState nextState() {
+            return EnterCVVForTransaction;
+        }
+    },
 
     EnterCVVForTransaction {
         @Override
         public void enter(BotContext context) {
-            sendMessage(context, "Please, enter your CVV for transaction");
+            sendMessage(context, "Please, enter your CVV for transaction:");
         }
 
         @Override
@@ -410,24 +410,19 @@ EnterCardNumberForTransaction {
 
         @Override
         public BotState nextState() {
-
             return EnterCardExpDateForTransaction;
         }
-
     },
 
-    EnterCardExpDateForTransaction{
-
-
+    EnterCardExpDateForTransaction {
         @Override
         public void enter(BotContext context) {
-            sendMessage(context, "Please, enter expiration date of your card for transaction (Format: yyyy-MM-dd)");
+            sendMessage(context, "Please, enter expiration date of your card for transaction (Format: yyyy-MM-dd):");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String expDate = context.getInput();
-
             context.getUser().getTransactionDetail().setSenderExpDate(expDate);
         }
 
@@ -437,12 +432,10 @@ EnterCardNumberForTransaction {
         }
     },
 
-
-    EnterRecipientCardNumberForTransaction{
-
+    EnterRecipientCardNumberForTransaction {
         @Override
         public void enter(BotContext context) {
-            sendMessage(context, "Please, enter recipient card number for transaction");
+            sendMessage(context, "Please, enter recipient card number for transaction:");
         }
 
         @Override
@@ -453,16 +446,14 @@ EnterCardNumberForTransaction {
 
         @Override
         public BotState nextState() {
-            return EnterAmountForTransactionAndMakeTransaction;
+            return EnterPasswordForTransaction;
         }
     },
 
-
-    EnterAmountForTransactionAndMakeTransaction{
-
+    EnterAmountForTransactionAndMakeTransaction {
         @Override
         public void enter(BotContext context) {
-            sendMessage(context, "Please, enter amount for transaction (e.g., 100.50)");
+            sendMessage(context, "Please, enter amount for transaction (e.g., 100.50):");
         }
 
         @Override
@@ -480,7 +471,6 @@ EnterCardNumberForTransaction {
                 String senderExpDateStr = context.getUser().getTransactionDetail().getSenderExpDate();
                 String recipientCardNumber = context.getUser().getTransactionDetail().getRecipientCardNumber();
 
-
                 LocalDate senderExpDate;
                 try {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -489,7 +479,6 @@ EnterCardNumberForTransaction {
                     sendMessage(context, "Invalid expiration date format. Use yyyy-MM-dd.");
                     return;
                 }
-
 
                 Optional<Card> senderCardOpt = context.getCardService().findByCardNumber(senderCardNumber);
                 if (senderCardOpt.isEmpty() ||
@@ -505,7 +494,6 @@ EnterCardNumberForTransaction {
                     return;
                 }
 
-
                 Optional<Card> recipientCardOpt = context.getCardService().findByCardNumber(recipientCardNumber);
                 Account recipientAccount = recipientCardOpt.map(Card::getAccount).orElse(null);
 
@@ -514,7 +502,6 @@ EnterCardNumberForTransaction {
                 String recipientCurrency = recipientAccount != null ? recipientAccount.getCurrency() : null;
 
                 if (recipientAccount != null && !senderCurrency.equals(recipientCurrency)) {
-
                     CurrencyRateService rateService = context.getCurrencyRateService();
                     Double rate = rateService.getRate(senderCurrency, recipientCurrency);
                     if (rate != null) {
@@ -525,7 +512,6 @@ EnterCardNumberForTransaction {
                     }
                 }
 
-
                 senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
                 context.getAccountService().saveAccount(senderAccount);
 
@@ -533,7 +519,6 @@ EnterCardNumberForTransaction {
                     recipientAccount.setCurrentBalance(recipientAccount.getCurrentBalance().add(recipientAmount));
                     context.getAccountService().saveAccount(recipientAccount);
                 }
-
 
                 Transaction senderTransaction = new Transaction();
                 senderTransaction.setAccount(senderAccount);
@@ -547,7 +532,6 @@ EnterCardNumberForTransaction {
                     senderTransaction.setRecipientDetails("External recipient: " + recipientCardNumber);
                 }
                 context.getTransactionService().saveTransaction(senderTransaction);
-
 
                 if (recipientAccount != null) {
                     Transaction recipientTransaction = new Transaction();
@@ -565,12 +549,98 @@ EnterCardNumberForTransaction {
             }
         }
 
-
         @Override
         public BotState nextState() {
             return Menu;
         }
+    },
+
+
+    EnterPassword {
+        private BotState next;
+        private int counterOfInputProblem = 0;
+
+            @Override
+            public void enter(BotContext context) {
+                sendMessage(context, "Enter your password please:");
+            }
+
+            @Override
+            public void handleInput(BotContext context) {
+                String password = context.getInput();
+                int messageId = context.getMessageId();
+
+                if (Utils.isValidPassword(password)) {
+                    String encodedPassword = Utils.encodePassword(password);
+                    context.getUser().setPassword(encodedPassword);
+                    sendMessage(context, "Password saved. Next state is Menu.");
+                    deleteMessage(context, messageId);
+                    next = Menu;
+                } else {
+                    sendMessage(context, "Invalid password format!");
+                    counterOfInputProblem++;
+                    if (counterOfInputProblem > 3) {
+                        sendMessage(context, "Input problem, return to start.");
+                        deleteMessage(context, messageId);
+                        next = Start;
+                    } else {
+                        sendMessage(context, "Enter your password again please:");
+                    }
+                }
+            }
+
+
+
+        @Override
+        public BotState nextState() {
+            return next;
+        }
+    },
+
+    EnterPasswordForTransaction {
+        private BotState next;
+        private int counterOfInputProblem = 0;
+
+        @Override
+        public void enter(BotContext context) {
+            sendMessage(context, "Please, enter your password for transaction:");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String password = context.getInput();
+            int messageId = context.getMessageId();
+
+            User user = context.getUser();
+            String encodedPassword = user.getPassword();
+
+            if (Utils.matchesPassword(password, encodedPassword)) {
+                sendMessage(context, "Password verified.");
+                deleteMessage(context, messageId);
+                next = EnterAmountForTransactionAndMakeTransaction;
+            } else {
+                sendMessage(context, "Invalid password format or wrong password");
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    sendMessage(context, "Input problem, return to Menu.");
+                    deleteMessage(context, messageId);
+                    next = Menu;
+                } else {
+                    sendMessage(context, "Enter your password again please:");
+                }
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return next;
+        }
+
+
     };
+
+
+
 
     public static void sendMessage(BotContext context, String text) {
         SendMessage message = new SendMessage();
@@ -635,5 +705,14 @@ EnterCardNumberForTransaction {
         }
     }
 
-
+    private static void deleteMessage(BotContext context, int messageId) {
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setChatId(String.valueOf(context.getUser().getTelegramId()));
+        deleteMessage.setMessageId(messageId);
+        try {
+            context.getBot().execute(deleteMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

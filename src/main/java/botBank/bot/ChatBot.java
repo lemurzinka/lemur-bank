@@ -68,6 +68,7 @@ public class ChatBot extends TelegramLongPollingBot {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             String callbackData = callbackQuery.getData();
             long chatId = callbackQuery.getMessage().getChatId();
+            int messageId = callbackQuery.getMessage().getMessageId();
 
             User user = userService.findByTelegramId(chatId);
 
@@ -76,7 +77,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, userService, cardService, cardAccountService,
+            BotContext context = BotContext.of(this, user, callbackData, messageId, userService, cardService, cardAccountService,
                     transactionService, accountService, rateService);
             switch (callbackData) {
                 case "/update":
@@ -140,11 +141,12 @@ public class ChatBot extends TelegramLongPollingBot {
 
             final String text = update.getMessage().getText();
             final long chatId = update.getMessage().getChatId();
+            int messageId = update.getMessage().getMessageId();
 
 
 
             User user = userService.findByTelegramId(chatId);
-            BotContext context = BotContext.of(this, user, text, userService, cardService, cardAccountService, transactionService,
+            BotContext context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService,
                     accountService, rateService);
 
 
@@ -154,7 +156,7 @@ public class ChatBot extends TelegramLongPollingBot {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
-                context = BotContext.of(this, user, text, userService, cardService, cardAccountService, transactionService,
+                context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService,
                         accountService, rateService);
 
                 state.enter(context);
