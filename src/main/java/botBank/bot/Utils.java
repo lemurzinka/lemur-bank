@@ -22,17 +22,17 @@ public class Utils {
         return passwordEncoder.encode(password);
     }
 
-        public static boolean isValidPassword(String password) {
-            if (password == null) {
-                return false;
-            }
-            return PASSWORD_PATTERN.matcher(password).matches();
+    public static boolean isValidPassword(String password) {
+        if (password == null) {
+            return false;
         }
+        return PASSWORD_PATTERN.matcher(password).matches();
+    }
 
 
-        public static boolean matchesPassword(String rawPassword, String encodedPassword) {
-            return passwordEncoder.matches(rawPassword, encodedPassword);
-        }
+    public static boolean matchesPassword(String rawPassword, String encodedPassword) {
+        return passwordEncoder.matches(rawPassword, encodedPassword);
+    }
 
 
     public static boolean isValidEmail(String email) {
