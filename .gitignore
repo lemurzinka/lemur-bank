@@ -29,3 +29,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+
+/src/main/resources/telegram.properties
+/src/main/resources/application.properties
+/mvnw
+/mvnw.cmd
