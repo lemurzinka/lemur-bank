@@ -1,6 +1,8 @@
 package botBank.service;
 
 import botBank.retrievers.RateRetriever;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -8,16 +10,19 @@ import java.util.Map;
 @Service
 public class CurrencyRateService {
 
+    private static final Logger LOGGER = LogManager.getLogger(CurrencyRateService.class);
+
     private final RateRetriever rateRetriever;
 
     public CurrencyRateService(RateRetriever rateRetriever) {
         this.rateRetriever = rateRetriever;
     }
 
-
     public Double getRate(String fromCurrency, String toCurrency) {
+        LOGGER.info("Getting rate from {} to {}", fromCurrency, toCurrency);
         Map<String, Double> rates = rateRetriever.getRates();
         if (rates == null || !rates.containsKey(fromCurrency) || !rates.containsKey(toCurrency)) {
+            LOGGER.warn("Rates not available for {} or {}", fromCurrency, toCurrency);
             return null;
         }
 
@@ -36,34 +41,30 @@ public class CurrencyRateService {
         Double eurToUah = 1.0 / uahToEur;
         Double usdToUah = 1.0 / uahToUsd;
 
-
+        Double conversionRate;
         if (fromCurrency.equals("USD") && toCurrency.equals("EUR")) {
-            return eurToUsd; // USD → EUR
-
+            conversionRate = eurToUsd; // USD → EUR
         } else if (fromCurrency.equals("EUR") && toCurrency.equals("USD")) {
-            return usdToEurDirect; // EUR → USD
-
+            conversionRate = usdToEurDirect; // EUR → USD
         } else if (fromCurrency.equals("USD") && toCurrency.equals("UAH")) {
-            return uahToUsd; // USD → UAH
-
+            conversionRate = uahToUsd; // USD → UAH
         } else if (fromCurrency.equals("UAH") && toCurrency.equals("USD")) {
-            return usdToUah; // UAH → USD
-
+            conversionRate = usdToUah; // UAH → USD
         } else if (fromCurrency.equals("EUR") && toCurrency.equals("UAH")) {
-            return uahToEur; // EUR → UAH
-
+            conversionRate = uahToEur; // EUR → UAH
         } else if (fromCurrency.equals("UAH") && toCurrency.equals("EUR")) {
-            return eurToUah; // UAH → EUR
+            conversionRate = eurToUah; // UAH → EUR
         } else {
-
             Double fromToUsd = 1.0 / fromRate;
             Double toFromUsd = toRate / rates.get("USD");
-            return fromToUsd / toFromUsd;
+            conversionRate = fromToUsd / toFromUsd;
         }
+        LOGGER.info("Conversion rate from {} to {}: {}", fromCurrency, toCurrency, conversionRate);
+        return conversionRate;
     }
 
-
     public String getFormattedRates() {
+        LOGGER.info("Getting formatted rates");
         Map<String, Double> rates = rateRetriever.getRates();
         if (rates != null) {
             Double usdToEur = rates.get("USD");
@@ -74,7 +75,7 @@ public class CurrencyRateService {
             Double eurToUah = 1.0 / uahToEur;
             Double usdToUah = 1.0 / uahToUsd;
 
-            return String.format(
+            String formattedRates = String.format(
                     "Курси валют:\n" +
                             "EUR → USD: %.2f\n" +
                             "USD → EUR: %.2f\n" +
@@ -83,7 +84,10 @@ public class CurrencyRateService {
                             "EUR → UAH: %.2f\n" +
                             "USD → UAH: %.2f",
                     eurToUsd, usdToEurDirect, uahToEur, uahToUsd, eurToUah, usdToUah);
+            LOGGER.info("Formatted rates: {}", formattedRates);
+            return formattedRates;
         } else {
+            LOGGER.error("Rates are not available");
             return "Error.";
         }
     }

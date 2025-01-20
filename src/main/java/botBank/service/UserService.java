@@ -2,17 +2,21 @@ package botBank.service;
 
 import botBank.bot.BotContext;
 import botBank.model.User;
+import botBank.repo.UserRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import botBank.repo.UserRepository;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
 import java.util.List;
-
-
 
 @Service
 public class UserService {
+
+    private static final Logger LOGGER = LogManager.getLogger(UserService.class);
+
     private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository) {
@@ -21,29 +25,33 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User findByTelegramId(Long telegramId) {
+        LOGGER.info("Finding user by Telegram ID: {}", telegramId);
         return userRepository.findByTelegramId(telegramId);
     }
 
     @Transactional
-    public User findByNumber(String Number) {
-        return userRepository.findByNumber(Number);
+    public User findByNumber(String number) {
+        LOGGER.info("Finding user by number: {}", number);
+        return userRepository.findByNumber(number);
     }
 
     @Transactional
     public void addUser(User user) {
+        LOGGER.info("Adding new user: {}", user);
         userRepository.save(user);
     }
 
-    @Transactional()
+    @Transactional
     public void updateUser(User user) {
+        LOGGER.info("Updating user: {}", user);
         userRepository.save(user);
     }
 
     @Transactional(readOnly = true)
     public List<User> findAllUsers() {
+        LOGGER.info("Finding all users");
         return userRepository.findAll();
     }
-
 
     public void listUsers(BotContext context) {
         StringBuilder sb = new StringBuilder("All users list:\r\n");
@@ -56,6 +64,7 @@ public class UserService {
                 .append(user.getEmail())
                 .append("\r\n"));
 
+        LOGGER.info("Listing all users");
         sendMessage(context, sb.toString());
     }
 
@@ -67,9 +76,7 @@ public class UserService {
         try {
             context.getBot().execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to send message to chat ID: {}", context.getUser().getTelegramId(), e);
         }
-
     }
 }
-

@@ -19,16 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public enum BotState {
 
 
 
     Start {
-
         @Override
         public void enter(BotContext context) {
-
+            LOGGER.info("Entering Start state");
             sendMessage(context, "Welcome!\n" +
                     "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
         }
@@ -48,6 +49,7 @@ public enum BotState {
 
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterPhone state");
             sendMessage(context, "Please share your phone number so we can verify your identity and ensure a smooth experience.\n" +
                     "Just type your phone number below (including the country code, e.g., +1234567890).");
         }
@@ -57,6 +59,7 @@ public enum BotState {
             String phoneNumber = context.getInput();
 
             if (!Utils.isValidPhoneNumber(phoneNumber)) {
+                LOGGER.warn("Invalid phone number format: {}", phoneNumber);
                 sendMessage(context, "Wrong phone number format!");
                 isWrongPhone = true;
                 counterOfInputProblem++;
@@ -87,7 +90,7 @@ public enum BotState {
 
         @Override
         public void enter(BotContext context) {
-            List<BotCommand> commands = List.of();
+            LOGGER.info("Entering EnterEmail state");
             sendMessage(context, "Enter your e-mail please:");
         }
 
@@ -96,9 +99,11 @@ public enum BotState {
             String email = context.getInput();
 
             if (Utils.isValidEmail(email)) {
+                LOGGER.info("Email {} is valid", email);
                 context.getUser().setEmail(context.getInput());
                 next = Approved;
             } else {
+                LOGGER.warn("Invalid email format: {}", email);
                 sendMessage(context, "Wrong e-mail address!");
                 counterOfInputProblem++;
                 if (counterOfInputProblem > 3) {
@@ -121,6 +126,7 @@ public enum BotState {
     Approved(false) {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering Approved state");
             sendMessage(context, "Email approved!");
         }
 
@@ -133,12 +139,14 @@ public enum BotState {
     EnterFirstName {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterFirstName state");
             sendMessage(context, "Enter your first name please:");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String firstName = context.getInput();
+            LOGGER.info("First name entered: {}", firstName);
             context.getUser().setFirstName(firstName);
             sendMessage(context, "First name saved.");
         }
@@ -152,6 +160,7 @@ public enum BotState {
     EnterLastName {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterLastName state");
             sendMessage(context, "Enter your last name please:");
         }
 
@@ -159,6 +168,7 @@ public enum BotState {
         public void handleInput(BotContext context) {
             String lastName = context.getInput();
             User user = context.getUser();
+            LOGGER.info("Last name entered: {}", lastName);
             user.setLastName(lastName);
 
 
@@ -178,6 +188,7 @@ public enum BotState {
 
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering Menu state");
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
@@ -212,6 +223,7 @@ public enum BotState {
         @Override
         public void handleInput(BotContext context) {
             String wrongText = context.getInput();
+            LOGGER.warn("Invalid input received in Menu state: {}", wrongText);
             sendMessage(context, "Use buttons.");
 
             next = Menu;
@@ -231,6 +243,7 @@ public enum BotState {
 
         @Override
         public void enter(BotContext context){
+            LOGGER.info("Entering AddCard state");
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
@@ -250,8 +263,10 @@ public enum BotState {
         @Override
         public void handleInput(BotContext context) {
             String wrongText = context.getInput();
+            LOGGER.warn("Invalid input received in AddCard state: {}", wrongText);
             counterOfInputProblem ++;
             if (counterOfInputProblem > 3) {
+                LOGGER.warn("Input problem exceeded limit in AddCard state");
                 sendMessage(context, "Input problem, return to menu.");
                 next = Menu;
             }
@@ -269,6 +284,7 @@ public enum BotState {
     BANNED{
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering BANNED state");
             sendMessage(context, "You are banned from using the bot.");
         }
 
@@ -281,6 +297,7 @@ public enum BotState {
     BanUser {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering BanUser state");
             sendMessage(context, "Enter user ID to ban:");
         }
 
@@ -290,13 +307,16 @@ public enum BotState {
                 long userId = Long.parseLong(context.getInput());
                 User userToBan = context.getUserService().findByTelegramId(userId);
                 if (userToBan != null) {
+                    LOGGER.info("Banning user with ID: {}", userId);
                     userToBan.setBanned(true);
                     context.getUserService().updateUser(userToBan);
                     sendMessage(context, "User " + userId + " has been banned.");
                 } else {
+                    LOGGER.warn("User with ID: {} not found (Ban)", userId);
                     sendMessage(context, "User not found.");
                 }
             } catch (NumberFormatException e) {
+                LOGGER.error("Invalid user ID format (Ban): {}", context.getInput(), e);
                 sendMessage(context, "Invalid ID. Please try again.");
             }
         }
@@ -310,6 +330,7 @@ public enum BotState {
     UnbanUser {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering UnbanUser state");
             sendMessage(context, "Enter user ID to unban:");
         }
 
@@ -319,13 +340,16 @@ public enum BotState {
                 long userId = Long.parseLong(context.getInput());
                 User userToUnban = context.getUserService().findByTelegramId(userId);
                 if (userToUnban != null) {
+                    LOGGER.info("Unbanning user with ID: {}", userId);
                     userToUnban.setBanned(false);
                     context.getUserService().updateUser(userToUnban);
                     sendMessage(context, "User " + userId + " has been unbanned.");
                 } else {
+                    LOGGER.warn("User with ID: {} not found (Unban)", userId);
                     sendMessage(context, "User not found.");
                 }
             } catch (NumberFormatException e) {
+                LOGGER.error("Invalid user ID format (Unban): {}", context.getInput(), e);
                 sendMessage(context, "Invalid ID. Please try again.");
             }
         }
@@ -341,10 +365,10 @@ public enum BotState {
         private BotState next;
 
         @Override
-        public void enter(BotContext context){
+        public void enter(BotContext context) {
+            LOGGER.info("Entering ChoseCurrency state");
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
 
             InlineKeyboardButton uahCurrency = new InlineKeyboardButton("UAH");
             uahCurrency.setCallbackData("UAH");
@@ -354,7 +378,6 @@ public enum BotState {
             eurCurrency.setCallbackData("EUR");
             rows.add(List.of(uahCurrency, usdCurrency, eurCurrency));
 
-
             markup.setKeyboard(rows);
             sendMessageWithInlineKeyboard(context, "What should be the currency of the card?:", markup);
         }
@@ -362,31 +385,34 @@ public enum BotState {
         @Override
         public void handleInput(BotContext context) {
             String wrongText = context.getInput();
-            counterOfInputProblem ++;
+            LOGGER.warn("Invalid input received in ChoseCurrency state: {}", wrongText);
+            counterOfInputProblem++;
             if (counterOfInputProblem > 3) {
+                LOGGER.warn("Input problem exceeded limit in ChoseCurrency state");
                 sendMessage(context, "Input problem, return to menu.");
                 next = Menu;
             }
             sendMessage(context, "Use buttons.");
-
             next = ChoseCurrency;
         }
+
         @Override
         public BotState nextState() {
             return next;
         }
-
     },
 
     EnterCardNumberForTransaction {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterCardNumberForTransaction state");
             sendMessage(context, "Please, enter your card number for transaction:");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String cardNumber = context.getInput();
+            LOGGER.info("Card number entered for transaction: {}", cardNumber);
             context.getUser().getTransactionDetail().setSenderCardNumber(cardNumber);
         }
 
@@ -399,12 +425,14 @@ public enum BotState {
     EnterCVVForTransaction {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterCVVForTransaction state");
             sendMessage(context, "Please, enter your CVV for transaction:");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String CVV = context.getInput();
+            LOGGER.info("CVV entered for transaction: {}", CVV);
             context.getUser().getTransactionDetail().setSenderCvv(CVV);
         }
 
@@ -417,12 +445,14 @@ public enum BotState {
     EnterCardExpDateForTransaction {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterCardExpDateForTransaction state");
             sendMessage(context, "Please, enter expiration date of your card for transaction (Format: yyyy-MM-dd):");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String expDate = context.getInput();
+            LOGGER.info("Expiration date entered for transaction: {}", expDate);
             context.getUser().getTransactionDetail().setSenderExpDate(expDate);
         }
 
@@ -435,12 +465,14 @@ public enum BotState {
     EnterRecipientCardNumberForTransaction {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterRecipientCardNumberForTransaction state");
             sendMessage(context, "Please, enter recipient card number for transaction:");
         }
 
         @Override
         public void handleInput(BotContext context) {
             String cardNumber = context.getInput();
+            LOGGER.info("Recipient card number entered for transaction: {}", cardNumber);
             context.getUser().getTransactionDetail().setRecipientCardNumber(cardNumber);
         }
 
@@ -453,6 +485,7 @@ public enum BotState {
     EnterAmountForTransactionAndMakeTransaction {
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterAmountForTransactionAndMakeTransaction state");
             sendMessage(context, "Please, enter amount for transaction (e.g., 100.50):");
         }
 
@@ -462,10 +495,13 @@ public enum BotState {
             try {
                 BigDecimal senderAmount = new BigDecimal(amountStr);
                 if (senderAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    LOGGER.warn("Invalid amount entered: {}", senderAmount);
                     sendMessage(context, "The amount must be greater than zero. Please, try again.");
                     return;
                 }
                 context.getUser().getTransactionDetail().setAmount(senderAmount);
+                LOGGER.info("Amount for transaction: {}", senderAmount);
+
                 String senderCardNumber = context.getUser().getTransactionDetail().getSenderCardNumber();
                 String senderCvv = context.getUser().getTransactionDetail().getSenderCvv();
                 String senderExpDateStr = context.getUser().getTransactionDetail().getSenderExpDate();
@@ -476,6 +512,7 @@ public enum BotState {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                     senderExpDate = LocalDate.parse(senderExpDateStr, formatter);
                 } catch (DateTimeParseException e) {
+                    LOGGER.error("Invalid expiration date format: {}", senderExpDateStr, e);
                     sendMessage(context, "Invalid expiration date format. Use yyyy-MM-dd.");
                     return;
                 }
@@ -484,12 +521,14 @@ public enum BotState {
                 if (senderCardOpt.isEmpty() ||
                         !senderCardOpt.get().getCvv().equals(senderCvv) ||
                         !senderCardOpt.get().getExpirationDate().equals(senderExpDate)) {
+                    LOGGER.warn("Invalid or not found sender card details");
                     sendMessage(context, "Sender card details are invalid or not found.");
                     return;
                 }
 
                 Account senderAccount = senderCardOpt.get().getAccount();
                 if (senderAccount.getCurrentBalance().compareTo(senderAmount) < 0) {
+                    LOGGER.warn("Insufficient funds on sender's account: {}", senderAccount.getCurrentBalance());
                     sendMessage(context, "Insufficient funds on sender's account.");
                     return;
                 }
@@ -507,6 +546,7 @@ public enum BotState {
                     if (rate != null) {
                         recipientAmount = senderAmount.multiply(BigDecimal.valueOf(rate));
                     } else {
+                        LOGGER.error("Currency conversion rate unavailable");
                         sendMessage(context, "Currency conversion rate is unavailable.");
                         return;
                     }
@@ -514,10 +554,12 @@ public enum BotState {
 
                 senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
                 context.getAccountService().saveAccount(senderAccount);
+                LOGGER.info("Sender account balance updated: {}", senderAccount.getCurrentBalance());
 
                 if (recipientAccount != null) {
                     recipientAccount.setCurrentBalance(recipientAccount.getCurrentBalance().add(recipientAmount));
                     context.getAccountService().saveAccount(recipientAccount);
+                    LOGGER.info("Recipient account balance updated: {}", recipientAccount.getCurrentBalance());
                 }
 
                 Transaction senderTransaction = new Transaction();
@@ -532,6 +574,7 @@ public enum BotState {
                     senderTransaction.setRecipientDetails("External recipient: " + recipientCardNumber);
                 }
                 context.getTransactionService().saveTransaction(senderTransaction);
+                LOGGER.info("Sender transaction saved: {}", senderTransaction);
 
                 if (recipientAccount != null) {
                     Transaction recipientTransaction = new Transaction();
@@ -541,10 +584,12 @@ public enum BotState {
                     recipientTransaction.setTransactionDate(LocalDateTime.now());
                     recipientTransaction.setRecipientAccount(senderAccount);
                     context.getTransactionService().saveTransaction(recipientTransaction);
+                    LOGGER.info("Recipient transaction saved: {}", recipientTransaction);
                 }
 
                 sendMessage(context, "Transaction is successful.");
             } catch (NumberFormatException e) {
+                LOGGER.error("Invalid amount format: {}", amountStr, e);
                 sendMessage(context, "Invalid amount format. Please, enter a valid number (e.g., 100.50).");
             }
         }
@@ -560,36 +605,38 @@ public enum BotState {
         private BotState next;
         private int counterOfInputProblem = 0;
 
-            @Override
-            public void enter(BotContext context) {
-                sendMessage(context, "Enter your password please:");
-            }
+        @Override
+        public void enter(BotContext context) {
+            LOGGER.info("Entering EnterPassword state");
+            sendMessage(context, "Enter your password please:");
+        }
 
-            @Override
-            public void handleInput(BotContext context) {
-                String password = context.getInput();
-                int messageId = context.getMessageId();
+        @Override
+        public void handleInput(BotContext context) {
+            String password = context.getInput();
+            int messageId = context.getMessageId();
 
-                if (Utils.isValidPassword(password)) {
-                    String encodedPassword = Utils.encodePassword(password);
-                    context.getUser().setPassword(encodedPassword);
-                    sendMessage(context, "Password saved. Next state is Menu.");
+            if (Utils.isValidPassword(password)) {
+                LOGGER.info("Valid password entered");
+                String encodedPassword = Utils.encodePassword(password);
+                context.getUser().setPassword(encodedPassword);
+                sendMessage(context, "Password saved. Next state is Menu.");
+                deleteMessage(context, messageId);
+                next = Menu;
+            } else {
+                LOGGER.warn("Invalid password format");
+                sendMessage(context, "Invalid password format!");
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    LOGGER.warn("Input problem exceeded limit in EnterPassword state");
+                    sendMessage(context, "Input problem, return to start.");
                     deleteMessage(context, messageId);
-                    next = Menu;
+                    next = Start;
                 } else {
-                    sendMessage(context, "Invalid password format!");
-                    counterOfInputProblem++;
-                    if (counterOfInputProblem > 3) {
-                        sendMessage(context, "Input problem, return to start.");
-                        deleteMessage(context, messageId);
-                        next = Start;
-                    } else {
-                        sendMessage(context, "Enter your password again please:");
-                    }
+                    sendMessage(context, "Enter your password again please:");
                 }
             }
-
-
+        }
 
         @Override
         public BotState nextState() {
@@ -603,6 +650,7 @@ public enum BotState {
 
         @Override
         public void enter(BotContext context) {
+            LOGGER.info("Entering EnterPasswordForTransaction state");
             sendMessage(context, "Please, enter your password for transaction:");
         }
 
@@ -615,13 +663,16 @@ public enum BotState {
             String encodedPassword = user.getPassword();
 
             if (Utils.matchesPassword(password, encodedPassword)) {
+                LOGGER.info("Password verified for transaction");
                 sendMessage(context, "Password verified.");
                 deleteMessage(context, messageId);
                 next = EnterAmountForTransactionAndMakeTransaction;
             } else {
+                LOGGER.warn("Invalid password format or wrong password entered");
                 sendMessage(context, "Invalid password format or wrong password");
                 counterOfInputProblem++;
                 if (counterOfInputProblem > 3) {
+                    LOGGER.warn("Input problem exceeded limit in EnterPasswordForTransaction state");
                     sendMessage(context, "Input problem, return to Menu.");
                     deleteMessage(context, messageId);
                     next = Menu;
@@ -635,8 +686,6 @@ public enum BotState {
         public BotState nextState() {
             return next;
         }
-
-
     };
 
 
@@ -704,6 +753,8 @@ public enum BotState {
             e.printStackTrace();
         }
     }
+    private static final Logger LOGGER = LogManager.getLogger(BotState.class);
+
 
     private static void deleteMessage(BotContext context, int messageId) {
         DeleteMessage deleteMessage = new DeleteMessage();
