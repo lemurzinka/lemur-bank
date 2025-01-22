@@ -1,11 +1,15 @@
 package botBank.bot;
 
 
-import botBank.model.*;
+import botBank.model.Account;
+import botBank.model.Card;
+import botBank.model.Transaction;
+import botBank.model.TransactionType;
+import botBank.model.User;
 import botBank.service.CurrencyRateService;
+import botBank.service.ValidationService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -27,16 +31,30 @@ public enum BotState {
 
 
     Start {
+        private BotState next;
+
+
         @Override
         public void enter(BotContext context) {
             LOGGER.info("Entering Start state");
-            sendMessage(context, "Welcome!\n" +
-                    "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.");
+       InlineKeyboardMarkup markup = BotState.createHelloKeyboard();
+            sendMessageWithInlineKeyboard(context, "Welcome!\n" +
+                    "Hello, I am your personal assistant bot of Lemur Bank! Here to help you with all your banking needs. Let's get started by securing your account.", markup);
         }
+
+
+
+        @Override
+        public void handleInput(BotContext context) {
+            LOGGER.warn("Invalid input received in Start state: {}", context.getInput());
+                sendMessage(context, "Use buttons.");
+                next = Start;
+        }
+
 
         @Override
         public BotState nextState() {
-            return EnterPhone;
+            return next;
         }
 
 
@@ -57,8 +75,9 @@ public enum BotState {
         @Override
         public void handleInput(BotContext context) {
             String phoneNumber = context.getInput();
+            ValidationService validationService = context.getValidationService();
 
-            if (!Utils.isValidPhoneNumber(phoneNumber)) {
+            if (!validationService.isValidPhoneNumber(phoneNumber)) {
                 LOGGER.warn("Invalid phone number format: {}", phoneNumber);
                 sendMessage(context, "Wrong phone number format!");
                 isWrongPhone = true;
@@ -96,9 +115,10 @@ public enum BotState {
 
         @Override
         public void handleInput(BotContext context) {
+            ValidationService validationService = context.getValidationService();
             String email = context.getInput();
 
-            if (Utils.isValidEmail(email)) {
+            if (validationService.isValidEmail(email)) {
                 LOGGER.info("Email {} is valid", email);
                 context.getUser().setEmail(context.getInput());
                 next = Approved;
@@ -183,224 +203,177 @@ public enum BotState {
 
 
 
-    Menu {
-        private BotState next;
+        Menu {
+            private BotState next;
 
-        @Override
-        public void enter(BotContext context) {
-            LOGGER.info("Entering Menu state");
-            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-
-            InlineKeyboardButton updateButton = new InlineKeyboardButton("Update Email");
-            updateButton.setCallbackData("/update");
-            InlineKeyboardButton addCardButton = new InlineKeyboardButton("Add New Card");
-            addCardButton.setCallbackData("/addcard");
-            InlineKeyboardButton myCardsButton = new InlineKeyboardButton("My cards");
-            myCardsButton.setCallbackData("/mycards");
-            InlineKeyboardButton exchangeRate = new InlineKeyboardButton("Exchange rate");
-            exchangeRate.setCallbackData("/rates");
-            InlineKeyboardButton sendMoney = new InlineKeyboardButton("Send money");
-            sendMoney.setCallbackData("/send");
-            rows.add(List.of(updateButton, addCardButton, myCardsButton, exchangeRate, sendMoney));
-
-            if (context.getUser().isAdmin()) {
-                InlineKeyboardButton listUsersButton = new InlineKeyboardButton("List Users");
-                listUsersButton.setCallbackData("/listusers");
-                InlineKeyboardButton banUserButton = new InlineKeyboardButton("Ban User");
-                banUserButton.setCallbackData("/banuser");
-                InlineKeyboardButton unbanUserButton = new InlineKeyboardButton("Unban User");
-                unbanUserButton.setCallbackData("/unbanuser");
-                rows.add(List.of(listUsersButton, banUserButton, unbanUserButton));
+            @Override
+            public void enter(BotContext context) {
+                LOGGER.info("Entering Menu state");
+                InlineKeyboardMarkup markup = createMenuKeyboard(context.getUser().isAdmin());
+                sendMessageWithInlineKeyboard(context, "You are in the menu now. Choose an option:", markup);
             }
 
-            markup.setKeyboard(rows);
-            sendMessageWithInlineKeyboard(context, "You are in the menu now. Choose an option:", markup);
-        }
-
-
-        @Override
-        public void handleInput(BotContext context) {
-            String wrongText = context.getInput();
-            LOGGER.warn("Invalid input received in Menu state: {}", wrongText);
-            sendMessage(context, "Use buttons.");
-
-            next = Menu;
-        }
-
-
-        @Override
-        public BotState nextState() {
-            return next;
-        }
-    },
-
-
-    AddCard {
-        private int counterOfInputProblem = 0;
-        private BotState next;
-
-        @Override
-        public void enter(BotContext context){
-            LOGGER.info("Entering AddCard state");
-            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-
-            InlineKeyboardButton creditCard = new InlineKeyboardButton("Credit");
-            creditCard.setCallbackData("credit");
-            InlineKeyboardButton debitCard = new InlineKeyboardButton("Debit");
-            debitCard.setCallbackData("debit");
-            rows.add(List.of(creditCard, debitCard));
-
-
-            markup.setKeyboard(rows);
-            sendMessageWithInlineKeyboard(context, "Chose a type of card:", markup);
-        }
-
-
-        @Override
-        public void handleInput(BotContext context) {
-            String wrongText = context.getInput();
-            LOGGER.warn("Invalid input received in AddCard state: {}", wrongText);
-            counterOfInputProblem ++;
-            if (counterOfInputProblem > 3) {
-                LOGGER.warn("Input problem exceeded limit in AddCard state");
-                sendMessage(context, "Input problem, return to menu.");
+            @Override
+            public void handleInput(BotContext context) {
+                LOGGER.warn("Invalid input received in Menu state: {}", context.getInput());
+                sendMessage(context, "Use buttons.");
                 next = Menu;
             }
-            sendMessage(context, "Use buttons.");
 
-            next = AddCard;
-        }
+            @Override
+            public BotState nextState() {
+                return next;
+            }
 
-        @Override
-        public BotState nextState() {
-            return next;
-        }
-    },
 
-    BANNED{
-        @Override
-        public void enter(BotContext context) {
-            LOGGER.info("Entering BANNED state");
-            sendMessage(context, "You are banned from using the bot.");
-        }
+        },
 
-        @Override
-        public BotState nextState() {
-            return BANNED;
-        }
-    },
+        AddCard {
+            private int counterOfInputProblem = 0;
+            private BotState next;
 
-    BanUser {
-        @Override
-        public void enter(BotContext context) {
-            LOGGER.info("Entering BanUser state");
-            sendMessage(context, "Enter user ID to ban:");
-        }
+            @Override
+            public void enter(BotContext context) {
+                LOGGER.info("Entering AddCard state");
+                InlineKeyboardMarkup markup = createAddCardKeyboard();
+              sendMessageWithInlineKeyboard(context, "Chose a type of card:", markup);
+            }
 
-        @Override
-        public void handleInput(BotContext context) {
-            try {
-                long userId = Long.parseLong(context.getInput());
-                User userToBan = context.getUserService().findByTelegramId(userId);
-                if (userToBan != null) {
-                    LOGGER.info("Banning user with ID: {}", userId);
-                    userToBan.setBanned(true);
-                    context.getUserService().updateUser(userToBan);
-                    sendMessage(context, "User " + userId + " has been banned.");
+            @Override
+            public void handleInput(BotContext context) {
+                LOGGER.warn("Invalid input received in AddCard state: {}", context.getInput());
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    LOGGER.warn("Input problem exceeded limit in AddCard state");
+                  sendMessage(context, "Input problem, return to menu.");
+                    next = Menu;
                 } else {
-                    LOGGER.warn("User with ID: {} not found (Ban)", userId);
-                    sendMessage(context, "User not found.");
+                  sendMessage(context, "Use buttons.");
+                    next = AddCard;
                 }
-            } catch (NumberFormatException e) {
-                LOGGER.error("Invalid user ID format (Ban): {}", context.getInput(), e);
-                sendMessage(context, "Invalid ID. Please try again.");
             }
-        }
 
-        @Override
-        public BotState nextState() {
-            return Menu;
-        }
-    },
+            @Override
+            public BotState nextState() {
+                return next;
+            }
 
-    UnbanUser {
-        @Override
-        public void enter(BotContext context) {
-            LOGGER.info("Entering UnbanUser state");
-            sendMessage(context, "Enter user ID to unban:");
-        }
 
-        @Override
-        public void handleInput(BotContext context) {
-            try {
-                long userId = Long.parseLong(context.getInput());
-                User userToUnban = context.getUserService().findByTelegramId(userId);
-                if (userToUnban != null) {
-                    LOGGER.info("Unbanning user with ID: {}", userId);
-                    userToUnban.setBanned(false);
-                    context.getUserService().updateUser(userToUnban);
-                    sendMessage(context, "User " + userId + " has been unbanned.");
+        },
+
+        BANNED {
+            @Override
+            public void enter(BotContext context) {
+                LOGGER.info("Entering BANNED state");
+                sendMessage(context, "You are banned from using the bot.");
+            }
+
+            @Override
+            public BotState nextState() {
+                return BANNED;
+            }
+        },
+
+        BanUser {
+            @Override
+            public void enter(BotContext context) {
+                LOGGER.info("Entering BanUser state");
+               sendMessage(context, "Enter user ID to ban:");
+            }
+
+            @Override
+            public void handleInput(BotContext context) {
+                try {
+                    long userId = Long.parseLong(context.getInput());
+                    User userToBan = context.getUserService().findByTelegramId(userId);
+                    if (userToBan != null) {
+                        LOGGER.info("Banning user with ID: {}", userId);
+                        userToBan.setBanned(true);
+                        context.getUserService().updateUser(userToBan);
+                       sendMessage(context, "User " + userId + " has been banned.");
+                    } else {
+                        LOGGER.warn("User with ID: {} not found (Ban)", userId);
+                        sendMessage(context, "User not found.");
+                    }
+                } catch (NumberFormatException e) {
+                    LOGGER.error("Invalid user ID format (Ban): {}", context.getInput(), e);
+                    sendMessage(context, "Invalid ID. Please try again.");
+                }
+            }
+
+            @Override
+            public BotState nextState() {
+                return Menu;
+            }
+        },
+
+        UnbanUser {
+            @Override
+            public void enter(BotContext context) {
+                LOGGER.info("Entering UnbanUser state");
+                sendMessage(context, "Enter user ID to unban:");
+            }
+
+            @Override
+            public void handleInput(BotContext context) {
+                try {
+                    long userId = Long.parseLong(context.getInput());
+                    User userToUnban = context.getUserService().findByTelegramId(userId);
+                    if (userToUnban != null) {
+                        LOGGER.info("Unbanning user with ID: {}", userId);
+                        userToUnban.setBanned(false);
+                        context.getUserService().updateUser(userToUnban);
+                        sendMessage(context, "User " + userId + " has been unbanned.");
+                    } else {
+                        LOGGER.warn("User with ID: {} not found (Unban)", userId);
+                       sendMessage(context, "User not found.");
+                    }
+                } catch (NumberFormatException e) {
+                    LOGGER.error("Invalid user ID format (Unban): {}", context.getInput(), e);
+                   sendMessage(context, "Invalid ID. Please try again.");
+                }
+            }
+
+            @Override
+            public BotState nextState() {
+                return Menu;
+            }
+        },
+
+        ChoseCurrency {
+            private int counterOfInputProblem = 0;
+            private BotState next;
+
+            @Override
+            public void enter(BotContext context) {
+                LOGGER.info("Entering ChoseCurrency state");
+                InlineKeyboardMarkup markup = createCurrencyKeyboard();
+                sendMessageWithInlineKeyboard(context, "What should be the currency of the card?:", markup);
+            }
+
+            @Override
+            public void handleInput(BotContext context) {
+                LOGGER.warn("Invalid input received in ChoseCurrency state: {}", context.getInput());
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    LOGGER.warn("Input problem exceeded limit in ChoseCurrency state");
+                   sendMessage(context, "Input problem, return to menu.");
+                    next = Menu;
                 } else {
-                    LOGGER.warn("User with ID: {} not found (Unban)", userId);
-                    sendMessage(context, "User not found.");
+                   sendMessage(context, "Use buttons.");
+                    next = ChoseCurrency;
                 }
-            } catch (NumberFormatException e) {
-                LOGGER.error("Invalid user ID format (Unban): {}", context.getInput(), e);
-                sendMessage(context, "Invalid ID. Please try again.");
             }
-        }
 
-        @Override
-        public BotState nextState() {
-            return Menu;
-        }
-    },
-
-    ChoseCurrency {
-        private int counterOfInputProblem = 0;
-        private BotState next;
-
-        @Override
-        public void enter(BotContext context) {
-            LOGGER.info("Entering ChoseCurrency state");
-            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-            InlineKeyboardButton uahCurrency = new InlineKeyboardButton("UAH");
-            uahCurrency.setCallbackData("UAH");
-            InlineKeyboardButton usdCurrency = new InlineKeyboardButton("USD");
-            usdCurrency.setCallbackData("USD");
-            InlineKeyboardButton eurCurrency = new InlineKeyboardButton("EUR");
-            eurCurrency.setCallbackData("EUR");
-            rows.add(List.of(uahCurrency, usdCurrency, eurCurrency));
-
-            markup.setKeyboard(rows);
-            sendMessageWithInlineKeyboard(context, "What should be the currency of the card?:", markup);
-        }
-
-        @Override
-        public void handleInput(BotContext context) {
-            String wrongText = context.getInput();
-            LOGGER.warn("Invalid input received in ChoseCurrency state: {}", wrongText);
-            counterOfInputProblem++;
-            if (counterOfInputProblem > 3) {
-                LOGGER.warn("Input problem exceeded limit in ChoseCurrency state");
-                sendMessage(context, "Input problem, return to menu.");
-                next = Menu;
+            @Override
+            public BotState nextState() {
+                return next;
             }
-            sendMessage(context, "Use buttons.");
-            next = ChoseCurrency;
-        }
 
-        @Override
-        public BotState nextState() {
-            return next;
-        }
-    },
+        },
+
+
+
 
     EnterCardNumberForTransaction {
         @Override
@@ -493,101 +466,21 @@ public enum BotState {
         public void handleInput(BotContext context) {
             String amountStr = context.getInput();
             try {
-                BigDecimal senderAmount = new BigDecimal(amountStr);
-                if (senderAmount.compareTo(BigDecimal.ZERO) <= 0) {
-                    LOGGER.warn("Invalid amount entered: {}", senderAmount);
-                    sendMessage(context, "The amount must be greater than zero. Please, try again.");
-                    return;
-                }
-                context.getUser().getTransactionDetail().setAmount(senderAmount);
-                LOGGER.info("Amount for transaction: {}", senderAmount);
+                BigDecimal senderAmount = parseAmount(amountStr, context);
+                if (senderAmount == null) return;
 
-                String senderCardNumber = context.getUser().getTransactionDetail().getSenderCardNumber();
-                String senderCvv = context.getUser().getTransactionDetail().getSenderCvv();
-                String senderExpDateStr = context.getUser().getTransactionDetail().getSenderExpDate();
-                String recipientCardNumber = context.getUser().getTransactionDetail().getRecipientCardNumber();
+                if (!validateSenderDetails(context, senderAmount)) return;
 
-                LocalDate senderExpDate;
-                try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                    senderExpDate = LocalDate.parse(senderExpDateStr, formatter);
-                } catch (DateTimeParseException e) {
-                    LOGGER.error("Invalid expiration date format: {}", senderExpDateStr, e);
-                    sendMessage(context, "Invalid expiration date format. Use yyyy-MM-dd.");
-                    return;
-                }
+                Account senderAccount = context.getCardService().findByCardNumber(context.getUser().getTransactionDetail().getSenderCardNumber())
+                        .get().getAccount();
+                Account recipientAccount = getRecipientAccount(context);
 
-                Optional<Card> senderCardOpt = context.getCardService().findByCardNumber(senderCardNumber);
-                if (senderCardOpt.isEmpty() ||
-                        !senderCardOpt.get().getCvv().equals(senderCvv) ||
-                        !senderCardOpt.get().getExpirationDate().equals(senderExpDate)) {
-                    LOGGER.warn("Invalid or not found sender card details");
-                    sendMessage(context, "Sender card details are invalid or not found.");
-                    return;
-                }
+                BigDecimal recipientAmount = convertCurrencyIfNeeded(senderAccount, recipientAccount, senderAmount, context);
+                if (recipientAmount == null) return;
 
-                Account senderAccount = senderCardOpt.get().getAccount();
-                if (senderAccount.getCurrentBalance().compareTo(senderAmount) < 0) {
-                    LOGGER.warn("Insufficient funds on sender's account: {}", senderAccount.getCurrentBalance());
-                    sendMessage(context, "Insufficient funds on sender's account.");
-                    return;
-                }
+                processTransaction(senderAccount, recipientAccount, senderAmount, recipientAmount, context);
 
-                Optional<Card> recipientCardOpt = context.getCardService().findByCardNumber(recipientCardNumber);
-                Account recipientAccount = recipientCardOpt.map(Card::getAccount).orElse(null);
-
-                BigDecimal recipientAmount = senderAmount;
-                String senderCurrency = senderAccount.getCurrency();
-                String recipientCurrency = recipientAccount != null ? recipientAccount.getCurrency() : null;
-
-                if (recipientAccount != null && !senderCurrency.equals(recipientCurrency)) {
-                    CurrencyRateService rateService = context.getCurrencyRateService();
-                    Double rate = rateService.getRate(senderCurrency, recipientCurrency);
-                    if (rate != null) {
-                        recipientAmount = senderAmount.multiply(BigDecimal.valueOf(rate));
-                    } else {
-                        LOGGER.error("Currency conversion rate unavailable");
-                        sendMessage(context, "Currency conversion rate is unavailable.");
-                        return;
-                    }
-                }
-
-                senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
-                context.getAccountService().saveAccount(senderAccount);
-                LOGGER.info("Sender account balance updated: {}", senderAccount.getCurrentBalance());
-
-                if (recipientAccount != null) {
-                    recipientAccount.setCurrentBalance(recipientAccount.getCurrentBalance().add(recipientAmount));
-                    context.getAccountService().saveAccount(recipientAccount);
-                    LOGGER.info("Recipient account balance updated: {}", recipientAccount.getCurrentBalance());
-                }
-
-                Transaction senderTransaction = new Transaction();
-                senderTransaction.setAccount(senderAccount);
-                senderTransaction.setTransactionType(TransactionType.TRANSFER);
-                senderTransaction.setAmount(senderAmount.negate());
-                senderTransaction.setTransactionDate(LocalDateTime.now());
-
-                if (recipientAccount != null) {
-                    senderTransaction.setRecipientAccount(recipientAccount);
-                } else {
-                    senderTransaction.setRecipientDetails("External recipient: " + recipientCardNumber);
-                }
-                context.getTransactionService().saveTransaction(senderTransaction);
-                LOGGER.info("Sender transaction saved: {}", senderTransaction);
-
-                if (recipientAccount != null) {
-                    Transaction recipientTransaction = new Transaction();
-                    recipientTransaction.setAccount(recipientAccount);
-                    recipientTransaction.setTransactionType(TransactionType.DEPOSIT);
-                    recipientTransaction.setAmount(recipientAmount);
-                    recipientTransaction.setTransactionDate(LocalDateTime.now());
-                    recipientTransaction.setRecipientAccount(senderAccount);
-                    context.getTransactionService().saveTransaction(recipientTransaction);
-                    LOGGER.info("Recipient transaction saved: {}", recipientTransaction);
-                }
-
-                sendMessage(context, "Transaction is successful.");
+              sendMessage(context, "Transaction is successful.");
             } catch (NumberFormatException e) {
                 LOGGER.error("Invalid amount format: {}", amountStr, e);
                 sendMessage(context, "Invalid amount format. Please, enter a valid number (e.g., 100.50).");
@@ -615,10 +508,11 @@ public enum BotState {
         public void handleInput(BotContext context) {
             String password = context.getInput();
             int messageId = context.getMessageId();
+            ValidationService validationService = context.getValidationService();
 
-            if (Utils.isValidPassword(password)) {
+            if (validationService.isValidPassword(password)) {
                 LOGGER.info("Valid password entered");
-                String encodedPassword = Utils.encodePassword(password);
+                String encodedPassword = validationService.encodePassword(password);
                 context.getUser().setPassword(encodedPassword);
                 sendMessage(context, "Password saved. Next state is Menu.");
                 deleteMessage(context, messageId);
@@ -656,13 +550,14 @@ public enum BotState {
 
         @Override
         public void handleInput(BotContext context) {
+            ValidationService validationService = context.getValidationService();
             String password = context.getInput();
             int messageId = context.getMessageId();
 
             User user = context.getUser();
             String encodedPassword = user.getPassword();
 
-            if (Utils.matchesPassword(password, encodedPassword)) {
+            if (validationService.matchesPassword(password, encodedPassword)) {
                 LOGGER.info("Password verified for transaction");
                 sendMessage(context, "Password verified.");
                 deleteMessage(context, messageId);
@@ -686,9 +581,52 @@ public enum BotState {
         public BotState nextState() {
             return next;
         }
+    },
+
+    EnterPasswordForUpdate{
+        private BotState next;
+        private int counterOfInputProblem = 0;
+
+        @Override
+        public void enter(BotContext context) {
+            LOGGER.info("Entering EnterPasswordForUpdate state");
+            sendMessage(context, "Please, enter your password for update:");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            ValidationService validationService = context.getValidationService();
+            String password = context.getInput();
+            int messageId = context.getMessageId();
+
+            User user = context.getUser();
+            String encodedPassword = user.getPassword();
+
+            if (validationService.matchesPassword(password, encodedPassword)) {
+                LOGGER.info("Password verified for update");
+                sendMessage(context, "Password verified.");
+                deleteMessage(context, messageId);
+                next = EnterEmail;
+            } else {
+                LOGGER.warn("Invalid password format or wrong password entered");
+                sendMessage(context, "Invalid password format or wrong password");
+                counterOfInputProblem++;
+                if (counterOfInputProblem > 3) {
+                    LOGGER.warn("Input problem exceeded limit in EnterPasswordForUpdate state");
+                    sendMessage(context, "Input problem, return to Menu.");
+                    deleteMessage(context, messageId);
+                    next = Menu;
+                } else {
+                    sendMessage(context, "Enter your password again please:");
+                }
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return next;
+        }
     };
-
-
 
 
     public static void sendMessage(BotContext context, String text) {
@@ -766,4 +704,226 @@ public enum BotState {
             e.printStackTrace();
         }
     }
+
+
+    private static InlineKeyboardMarkup createCurrencyKeyboard() {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton uahCurrencyButton = new InlineKeyboardButton();
+        uahCurrencyButton.setText("UAH");
+        uahCurrencyButton.setCallbackData("UAH");
+
+        InlineKeyboardButton usdCurrencyButton = new InlineKeyboardButton();
+        usdCurrencyButton.setText("USD");
+        usdCurrencyButton.setCallbackData("USD");
+
+        InlineKeyboardButton eurCurrencyButton = new InlineKeyboardButton();
+        eurCurrencyButton.setText("EUR");
+        eurCurrencyButton.setCallbackData("EUR");
+
+        rows.add(List.of(uahCurrencyButton, usdCurrencyButton, eurCurrencyButton));
+
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+
+
+    private static InlineKeyboardMarkup createHelloKeyboard() {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton helloButton = new InlineKeyboardButton();
+        helloButton.setText("Hello");
+        helloButton.setCallbackData("/hi");
+
+
+
+        rows.add(List.of(helloButton));
+
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+
+
+    private static InlineKeyboardMarkup createMenuKeyboard(boolean isAdmin) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton updateButton = new InlineKeyboardButton();
+        updateButton.setText("Update data");
+        updateButton.setCallbackData("/update");
+
+        InlineKeyboardButton addCardButton = new InlineKeyboardButton();
+        addCardButton.setText("Add New Card");
+        addCardButton.setCallbackData("/addcard");
+
+        InlineKeyboardButton myCardsButton = new InlineKeyboardButton();
+        myCardsButton.setText("My cards");
+        myCardsButton.setCallbackData("/mycards");
+
+        InlineKeyboardButton exchangeRateButton = new InlineKeyboardButton();
+        exchangeRateButton.setText("Exchange rate");
+        exchangeRateButton.setCallbackData("/rates");
+
+        InlineKeyboardButton sendMoneyButton = new InlineKeyboardButton();
+        sendMoneyButton.setText("Send money");
+        sendMoneyButton.setCallbackData("/send");
+
+        rows.add(List.of(updateButton, addCardButton, myCardsButton, exchangeRateButton, sendMoneyButton));
+
+        if (isAdmin) {
+            InlineKeyboardButton listUsersButton = new InlineKeyboardButton();
+            listUsersButton.setText("List Users");
+            listUsersButton.setCallbackData("/listusers");
+
+            InlineKeyboardButton banUserButton = new InlineKeyboardButton();
+            banUserButton.setText("Ban User");
+            banUserButton.setCallbackData("/banuser");
+
+            InlineKeyboardButton unbanUserButton = new InlineKeyboardButton();
+            unbanUserButton.setText("Unban User");
+            unbanUserButton.setCallbackData("/unbanuser");
+
+            rows.add(List.of(listUsersButton, banUserButton, unbanUserButton));
+        }
+
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+    private static InlineKeyboardMarkup createAddCardKeyboard() {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton creditCardButton = new InlineKeyboardButton();
+        creditCardButton.setText("Credit");
+        creditCardButton.setCallbackData("credit");
+
+        InlineKeyboardButton debitCardButton = new InlineKeyboardButton();
+        debitCardButton.setText("Debit");
+        debitCardButton.setCallbackData("debit");
+
+        rows.add(List.of(creditCardButton, debitCardButton));
+
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+    private static BigDecimal parseAmount(String amountStr, BotContext context) {
+        try {
+            BigDecimal senderAmount = new BigDecimal(amountStr);
+            if (senderAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                LOGGER.warn("Invalid amount entered: {}", senderAmount);
+                sendMessage(context, "The amount must be greater than zero. Please, try again.");
+                return null;
+            }
+            context.getUser().getTransactionDetail().setAmount(senderAmount);
+            LOGGER.info("Amount for transaction: {}", senderAmount);
+            return senderAmount;
+        } catch (NumberFormatException e) {
+            LOGGER.error("Invalid amount format: {}", amountStr, e);
+            sendMessage(context, "Invalid amount format. Please, enter a valid number (e.g., 100.50).");
+            return null;
+        }
+    }
+
+    private static boolean validateSenderDetails(BotContext context, BigDecimal senderAmount) {
+        String senderCardNumber = context.getUser().getTransactionDetail().getSenderCardNumber();
+        String senderCvv = context.getUser().getTransactionDetail().getSenderCvv();
+        String senderExpDateStr = context.getUser().getTransactionDetail().getSenderExpDate();
+        LocalDate senderExpDate;
+
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            senderExpDate = LocalDate.parse(senderExpDateStr, formatter);
+        } catch (DateTimeParseException e) {
+            LOGGER.error("Invalid expiration date format: {}", senderExpDateStr, e);
+            sendMessage(context, "Invalid expiration date format. Use yyyy-MM-dd.");
+            return false;
+        }
+
+        Optional<Card> senderCardOpt = context.getCardService().findByCardNumber(senderCardNumber);
+        if (senderCardOpt.isEmpty() || !senderCardOpt.get().getCvv().equals(senderCvv)
+                || !senderCardOpt.get().getExpirationDate().equals(senderExpDate)) {
+            LOGGER.warn("Invalid or not found sender card details");
+           sendMessage(context, "Sender card details are invalid or not found.");
+            return false;
+        }
+
+        Account senderAccount = senderCardOpt.get().getAccount();
+        if (senderAccount.getCurrentBalance().compareTo(senderAmount) < 0) {
+            LOGGER.warn("Insufficient funds on sender's account: {}", senderAccount.getCurrentBalance());
+           sendMessage(context, "Insufficient funds on sender's account.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static Account getRecipientAccount(BotContext context) {
+        String recipientCardNumber = context.getUser().getTransactionDetail().getRecipientCardNumber();
+        Optional<Card> recipientCardOpt = context.getCardService().findByCardNumber(recipientCardNumber);
+        return recipientCardOpt.map(Card::getAccount).orElse(null);
+    }
+
+    private static BigDecimal convertCurrencyIfNeeded(Account senderAccount, Account recipientAccount, BigDecimal senderAmount, BotContext context) {
+        BigDecimal recipientAmount = senderAmount;
+        String senderCurrency = senderAccount.getCurrency();
+        String recipientCurrency = recipientAccount != null ? recipientAccount.getCurrency() : null;
+
+        if (recipientAccount != null && !senderCurrency.equals(recipientCurrency)) {
+            CurrencyRateService rateService = context.getCurrencyRateService();
+            Double rate = rateService.getRate(senderCurrency, recipientCurrency);
+            if (rate != null) {
+                recipientAmount = senderAmount.multiply(BigDecimal.valueOf(rate));
+            } else {
+                LOGGER.error("Currency conversion rate unavailable");
+               sendMessage(context, "Currency conversion rate is unavailable.");
+                return null;
+            }
+        }
+
+        return recipientAmount;
+    }
+
+    private static void processTransaction(Account senderAccount, Account recipientAccount, BigDecimal senderAmount, BigDecimal recipientAmount, BotContext context) {
+        senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
+        context.getAccountService().saveAccount(senderAccount);
+        LOGGER.info("Sender account balance updated: {}", senderAccount.getCurrentBalance());
+
+        if (recipientAccount != null) {
+            recipientAccount.setCurrentBalance(recipientAccount.getCurrentBalance().add(recipientAmount));
+            context.getAccountService().saveAccount(recipientAccount);
+            LOGGER.info("Recipient account balance updated: {}", recipientAccount.getCurrentBalance());
+        }
+
+        Transaction senderTransaction = new Transaction();
+        senderTransaction.setAccount(senderAccount);
+        senderTransaction.setTransactionType(TransactionType.TRANSFER);
+        senderTransaction.setAmount(senderAmount.negate());
+        senderTransaction.setTransactionDate(LocalDateTime.now());
+
+        if (recipientAccount != null) {
+            senderTransaction.setRecipientAccount(recipientAccount);
+        } else {
+            senderTransaction.setRecipientDetails("External recipient: " + context.getUser().getTransactionDetail().getRecipientCardNumber());
+        }
+        context.getTransactionService().saveTransaction(senderTransaction);
+        LOGGER.info("Sender transaction saved: {}", senderTransaction);
+
+        if (recipientAccount != null) {
+            Transaction recipientTransaction = new Transaction();
+            recipientTransaction.setAccount(recipientAccount);
+            recipientTransaction.setTransactionType(TransactionType.DEPOSIT);
+            recipientTransaction.setAmount(recipientAmount);
+            recipientTransaction.setTransactionDate(LocalDateTime.now());
+            recipientTransaction.setRecipientAccount(senderAccount);
+            context.getTransactionService().saveTransaction(recipientTransaction);
+            LOGGER.info("Recipient transaction saved: {}", recipientTransaction);
+        }
+    }
+
 }

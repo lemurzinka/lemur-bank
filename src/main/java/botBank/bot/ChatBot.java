@@ -2,7 +2,14 @@ package botBank.bot;
 
 import botBank.event.BotEvent;
 import botBank.model.User;
-import botBank.service.*;
+import botBank.service.AccountService;
+import botBank.service.BotExecutor;
+import botBank.service.CardAccountService;
+import botBank.service.CardService;
+import botBank.service.CurrencyRateService;
+import botBank.service.TransactionService;
+import botBank.service.UserService;
+import botBank.service.ValidationService;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +21,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Component
 @PropertySource("classpath:telegram.properties")
@@ -28,6 +38,9 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
     private final TransactionService transactionService;
     private final AccountService accountService;
     private final CurrencyRateService currencyRateService;
+    private final ValidationService validationService;
+
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @Value("${bot.name}")
     private String botName;
@@ -37,7 +50,7 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
 
     public ChatBot(UserService userService, ApplicationEventPublisher eventPublisher,
                    CardService cardService, CardAccountService cardAccountService, TransactionService transactionService,
-                   AccountService accountService, CurrencyRateService currencyRateService) {
+                   AccountService accountService, CurrencyRateService currencyRateService, ValidationService validationService) {
         this.userService = userService;
         this.eventPublisher = eventPublisher;
         this.cardService = cardService;
@@ -45,6 +58,7 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
         this.transactionService = transactionService;
         this.accountService = accountService;
         this.currencyRateService = currencyRateService;
+        this.validationService = validationService;
     }
 
     @Override
@@ -64,6 +78,10 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
 
     @Override
     public void onUpdateReceived(Update update) {
+        executorService.submit(() -> handleUpdate(update));
+    }
+
+    private void handleUpdate(Update update) {
         LOGGER.info("Received update: {}", update);
 
         if (update.hasCallbackQuery()) {
@@ -82,7 +100,7 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService);
+            BotContext context = BotContext.of(this, user, callbackData, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService, validationService);
             eventPublisher.publishEvent(new BotEvent(this, context));
 
         } else if (update.hasMessage() && update.getMessage().hasText()) {
@@ -93,7 +111,7 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
             LOGGER.info("Received message: {} from chat ID: {}", text, chatId);
 
             User user = userService.findByTelegramId(chatId);
-            BotContext context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService);
+            BotContext context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService, validationService);
 
             BotState state;
 
@@ -102,7 +120,7 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
-                context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService);
+                context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService, validationService);
 
                 state.enter(context);
             } else {

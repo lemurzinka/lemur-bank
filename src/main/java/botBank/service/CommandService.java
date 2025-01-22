@@ -36,7 +36,7 @@ public class CommandService {
 
         switch (callbackData) {
             case "/update":
-                user.setStateId(BotState.EnterEmail.ordinal());
+                user.setStateId(BotState.EnterPasswordForUpdate.ordinal());
                 messageService.sendMessage(chatId, "You selected to update.");
                 break;
             case "/addcard":
@@ -78,6 +78,9 @@ public class CommandService {
                 TransactionDetail transactionDetail = new TransactionDetail();
                 user.setTransactionDetail(transactionDetail);
                 user.setStateId(BotState.EnterCardNumberForTransaction.ordinal());
+                break;
+            case "/hi":
+                user.setStateId(BotState.EnterPhone.ordinal());
                 break;
             default:
                 messageService.sendMessage(chatId, "Invalid option.");
