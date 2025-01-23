@@ -1,5 +1,6 @@
 package botBank.service;
 
+import botBank.bot.BotContext;
 import botBank.model.Card;
 import botBank.model.CardType;
 import botBank.repo.CardRepository;
@@ -8,10 +9,14 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+
+import static botBank.service.UserService.sendMessage;
 
 @Service
 public class CardService {
@@ -19,16 +24,30 @@ public class CardService {
     private static final Logger LOGGER = LogManager.getLogger(CardService.class);
     private static final Random RANDOM = new Random();
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private final CardRepository cardRepository;
 
     public CardService(CardRepository cardRepository) {
         this.cardRepository = cardRepository;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public Card findCardByCardNumber(String cardNumber) {
+        LOGGER.info("Finding card by card number: {}", cardNumber);
+        return cardRepository.findByCardNumber(cardNumber).orElse(null);
+    }
+    @Transactional(readOnly = true)
     public Optional<Card> findByCardNumber(String cardNumber) {
         LOGGER.info("Finding card by card number: {}", cardNumber);
         return cardRepository.findByCardNumber(cardNumber);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Card> findById(Long id) {
+        LOGGER.info("Finding card by id: {}", id);
+        return cardRepository.findById(id);
     }
 
     @Transactional
@@ -115,7 +134,7 @@ public class CardService {
         return card;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Card> getCardsByUserId(long userId) {
         LOGGER.info("Getting cards by user ID: {}", userId);
         return cardRepository.findAllByUserId(userId);
@@ -133,5 +152,43 @@ public class CardService {
         }
         LOGGER.info("Formatted card details for user");
         return response.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Card> findAllCards() {
+        LOGGER.info("Finding all cards");
+        return cardRepository.findAll();
+    }
+
+    public void listCards(BotContext context) {
+        StringBuilder sb = new StringBuilder("All cards list:\r\n");
+        List<Card> cards = findAllCards();
+
+        cards.forEach(card -> sb.append(card.getCardNumber())
+                .append(" ")
+                .append(card.getExpirationDate())
+                .append(" ")
+                .append(card.getCardType())
+                .append("\r\n"));
+
+        LOGGER.info("Listing all cards");
+        sendMessage(context, sb.toString());
+    }
+
+    @Transactional
+    public void updateCard(Card card) {
+        LOGGER.info("Updating card (before save): {}", card);
+        cardRepository.save(card);
+        entityManager.flush(); // Ensure changes are persisted immediately
+        LOGGER.info("Updating card (after flush): {}", card);
+
+
+        Optional<Card> updatedCardOpt = cardRepository.findById(card.getId());
+        if (updatedCardOpt.isPresent()) {
+            Card updatedCard = updatedCardOpt.get();
+            LOGGER.info("Updated card from DB: {}", updatedCard);
+        } else {
+            LOGGER.warn("Updated card not found in DB: id={}", card.getId());
+        }
     }
 }

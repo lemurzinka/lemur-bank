@@ -31,7 +31,7 @@ public class CardAccountService {
         LOGGER.info("Creating credit card and account for user: {}, initial balance: {}, currency: {}", user.getId(), initialBalance, currency);
         Card card = cardService.createCard("CREDIT");
         Account account = accountService.createAccount(user);
-        account.setBalance(initialBalance);
+        account.setCreditBalance(initialBalance);
         account.setCurrentBalance(initialBalance);
         account.setCurrency(currency);
         accountService.verifyAndSaveAccount(account);

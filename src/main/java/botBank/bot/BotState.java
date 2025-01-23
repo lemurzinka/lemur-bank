@@ -626,7 +626,77 @@ public enum BotState {
         public BotState nextState() {
             return next;
         }
+    },
+    BanCard {
+        @Override
+        public void enter(BotContext context) {
+            LOGGER.info("Entering BanCard state");
+            sendMessage(context, "Enter card number to ban:");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String cardNumber = context.getInput();
+            Card cardToBan = context.getCardService().findCardByCardNumber(cardNumber);
+            if (cardToBan != null) {
+                if (cardToBan.getUser().getId().equals(context.getUser().getId())) {
+                    LOGGER.warn("Admin cannot ban their own card: {}", cardNumber);
+                    sendMessage(context, "You cannot ban your own card.");
+                } else {
+                    LOGGER.info("Card before banning: {}", cardToBan);
+                    LOGGER.info("Banning card with number: {}", cardNumber);
+                    cardToBan.setBanned(true);
+                    context.getCardService().updateCard(cardToBan);
+                    LOGGER.info("Card after banning: {}", cardToBan);
+                    sendMessage(context, "Card " + cardNumber + " has been banned.");
+                }
+            } else {
+                LOGGER.warn("Card with number: {} not found (Ban)", cardNumber);
+                sendMessage(context, "Card not found.");
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return Menu;
+        }
+    },
+
+    UnbanCard {
+        @Override
+        public void enter(BotContext context) {
+            LOGGER.info("Entering UnbanCard state");
+            sendMessage(context, "Enter card number to unban:");
+        }
+
+        @Override
+        public void handleInput(BotContext context) {
+            String cardNumber = context.getInput();
+            Card cardToUnban = context.getCardService().findCardByCardNumber(cardNumber);
+            if (cardToUnban != null) {
+                if (cardToUnban.getUser().getId().equals(context.getUser().getId())) {
+                    LOGGER.warn("Admin cannot unban their own card: {}", cardNumber);
+                    sendMessage(context, "You cannot unban your own card.");
+                } else {
+                    LOGGER.info("Card before unbanning: {}", cardToUnban);
+                    LOGGER.info("Unbanning card with number: {}", cardNumber);
+                    cardToUnban.setBanned(false);
+                    context.getCardService().updateCard(cardToUnban);
+                    LOGGER.info("Card after unbanning: {}", cardToUnban);
+                    sendMessage(context, "Card " + cardNumber + " has been unbanned.");
+                }
+            } else {
+                LOGGER.warn("Card with number: {} not found (Unban)", cardNumber);
+                sendMessage(context, "Card not found.");
+            }
+        }
+
+        @Override
+        public BotState nextState() {
+            return Menu;
+        }
     };
+
 
 
     public static void sendMessage(BotContext context, String text) {
@@ -787,7 +857,26 @@ public enum BotState {
             unbanUserButton.setText("Unban User");
             unbanUserButton.setCallbackData("/unbanuser");
 
-            rows.add(List.of(listUsersButton, banUserButton, unbanUserButton));
+            InlineKeyboardButton listAccountsButton = new InlineKeyboardButton();
+            listAccountsButton.setText("List Accounts");
+            listAccountsButton.setCallbackData("/listaccounts");
+
+            InlineKeyboardButton listCardsButton = new InlineKeyboardButton();
+            listCardsButton.setText("List Cards");
+            listCardsButton.setCallbackData("/listcards");
+
+            InlineKeyboardButton banCardButton = new InlineKeyboardButton();
+            banCardButton.setText("Ban Card");
+            banCardButton.setCallbackData("/bancard");
+
+            InlineKeyboardButton unbanCardButton = new InlineKeyboardButton();
+            unbanCardButton.setText("Unban Card");
+            unbanCardButton.setCallbackData("/unbancard");
+
+
+
+
+            rows.add(List.of(listUsersButton, banUserButton, unbanUserButton, listAccountsButton, listCardsButton, banCardButton, unbanCardButton));
         }
 
         markup.setKeyboard(rows);
@@ -849,19 +938,27 @@ public enum BotState {
         if (senderCardOpt.isEmpty() || !senderCardOpt.get().getCvv().equals(senderCvv)
                 || !senderCardOpt.get().getExpirationDate().equals(senderExpDate)) {
             LOGGER.warn("Invalid or not found sender card details");
-           sendMessage(context, "Sender card details are invalid or not found.");
+            sendMessage(context, "Sender card details are invalid or not found.");
             return false;
         }
 
-        Account senderAccount = senderCardOpt.get().getAccount();
+        Card senderCard = senderCardOpt.get();
+        if (senderCard.isBanned()) {
+            LOGGER.warn("Sender card is banned: {}", senderCardNumber);
+            sendMessage(context, "Transaction cannot be processed because the sender's card is banned.");
+            return false;
+        }
+
+        Account senderAccount = senderCard.getAccount();
         if (senderAccount.getCurrentBalance().compareTo(senderAmount) < 0) {
             LOGGER.warn("Insufficient funds on sender's account: {}", senderAccount.getCurrentBalance());
-           sendMessage(context, "Insufficient funds on sender's account.");
+            sendMessage(context, "Insufficient funds on sender's account.");
             return false;
         }
 
         return true;
     }
+
 
     private static Account getRecipientAccount(BotContext context) {
         String recipientCardNumber = context.getUser().getTransactionDetail().getRecipientCardNumber();

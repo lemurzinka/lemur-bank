@@ -1,5 +1,6 @@
 package botBank.service;
 
+import botBank.bot.BotContext;
 import botBank.model.Account;
 import botBank.model.Credit;
 import botBank.model.User;
@@ -14,6 +15,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+
+import static botBank.service.UserService.sendMessage;
 
 @Service
 public class AccountService {
@@ -33,7 +36,7 @@ public class AccountService {
     @Transactional
     public void checkAndApplyCredits() {
         LOGGER.info("Checking and applying credits");
-        List<Account> accounts = accountRepository.findAllByCurrentBalanceLessThanBalance();
+        List<Account> accounts = accountRepository.findAllByCurrentBalanceLessThanCreditBalance();
 
         for (Account account : accounts) {
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -44,7 +47,7 @@ public class AccountService {
             long monthsBetween = ChronoUnit.MONTHS.between(lastCheckedDateTime, currentDateTime);
 
             if (monthsBetween >= 1) {
-                BigDecimal debt = account.getBalance().subtract(account.getCurrentBalance());
+                BigDecimal debt = account.getCreditBalance().subtract(account.getCurrentBalance());
 
                 if (debt.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal interest = debt.multiply(new BigDecimal(0.05));
@@ -132,4 +135,29 @@ public class AccountService {
         Account account = createAccount(user);
         verifyAndSaveAccount(account);
     }
+
+
+
+    @Transactional(readOnly = true)
+    public List<Account> findAllAccounts() {
+        LOGGER.info("Finding all accounts");
+        return accountRepository.findAll();
+    }
+
+    public void listAccounts(BotContext context) {
+        StringBuilder sb = new StringBuilder("All accounts list:\r\n");
+        List<Account> accounts = findAllAccounts();
+
+        accounts.forEach(account -> sb.append(account.getAccountNumber())
+                .append(" ")
+                .append(account.getCurrentBalance())
+                .append(" ")
+                .append(account.getCurrency())
+                .append("\r\n"));
+
+        LOGGER.info("Listing all accounts");
+        sendMessage(context, sb.toString());
+    }
+
+
 }

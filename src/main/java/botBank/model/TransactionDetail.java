@@ -39,7 +39,6 @@ public class TransactionDetail {
     @Column(name = "amount", nullable = true, precision = 15, scale = 2)
     private BigDecimal amount;
 
-    // Constructors, getters and setters
 
     public TransactionDetail() {}
 

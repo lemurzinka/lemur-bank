@@ -54,11 +54,18 @@ public class Card {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "is_banned", nullable = false)
+    private boolean isBanned = false;
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+    }
+
+    public void setBanned(boolean banned) {
+        isBanned = banned;
     }
 
     @Override
@@ -70,6 +77,7 @@ public class Card {
                 ", cvv='" + cvv + '\'' +
                 ", cardType=" + cardType +
                 ", createdAt=" + createdAt +
+                ", isBanned=" + isBanned +
                 '}';
     }
 }

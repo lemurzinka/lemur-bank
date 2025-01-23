@@ -51,7 +51,7 @@ public class CommandService {
                 messageService.sendMessage(chatId, "You selected to ban user.");
                 break;
             case "/unbanuser":
-                user.setStateId(BotState.AddCard.ordinal());
+                user.setStateId(BotState.UnbanUser.ordinal());
                 messageService.sendMessage(chatId, "You selected to unban user.");
                 break;
             case "credit":
@@ -82,6 +82,21 @@ public class CommandService {
             case "/hi":
                 user.setStateId(BotState.EnterPhone.ordinal());
                 break;
+            case "/listcards":
+                cardService.listCards(context);
+                break;
+            case "/listaccounts":
+                accountService.listAccounts(context);
+                break;
+            case "/bancard":
+                user.setStateId(BotState.BanCard.ordinal());
+                messageService.sendMessage(chatId, "You selected to ban card.");
+                break;
+            case "/unbancard":
+                user.setStateId(BotState.UnbanCard.ordinal());
+                messageService.sendMessage(chatId, "You selected to unban card.");
+                break;
+
             default:
                 messageService.sendMessage(chatId, "Invalid option.");
                 break;

@@ -12,7 +12,7 @@ public  interface AccountRepository extends JpaRepository<Account, Long> {
 
 
 
- @Query("SELECT a FROM Account a WHERE a.currentBalance < a.balance")
- List<Account> findAllByCurrentBalanceLessThanBalance();
+ @Query("SELECT a FROM Account a WHERE a.currentBalance < a.creditBalance")
+ List<Account> findAllByCurrentBalanceLessThanCreditBalance();
 
 }
