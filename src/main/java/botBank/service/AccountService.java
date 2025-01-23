@@ -145,7 +145,7 @@ public class AccountService {
     }
 
     public void listAccounts(BotContext context) {
-        StringBuilder sb = new StringBuilder("All accounts list:\r\n");
+        StringBuffer sb = new StringBuffer("All accounts list:\r\n");
         List<Account> accounts = findAllAccounts();
 
         accounts.forEach(account -> sb.append(account.getAccountNumber())

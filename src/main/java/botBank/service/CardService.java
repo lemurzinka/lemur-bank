@@ -141,7 +141,7 @@ public class CardService {
     }
 
     public String formatCardDetails(List<Card> cards) {
-        StringBuilder response = new StringBuilder("Your cards:\n");
+        StringBuffer response = new StringBuffer("Your cards:\n");
         for (Card card : cards) {
             response.append("Card Number: ").append(card.getCardNumber())
                     .append("\nExpiry Date: ").append(card.getExpirationDate())
@@ -161,7 +161,7 @@ public class CardService {
     }
 
     public void listCards(BotContext context) {
-        StringBuilder sb = new StringBuilder("All cards list:\r\n");
+        StringBuffer sb = new StringBuffer("All cards list:\r\n");
         List<Card> cards = findAllCards();
 
         cards.forEach(card -> sb.append(card.getCardNumber())
