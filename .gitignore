@@ -32,8 +32,6 @@ build/
 
 
 
-/src/main/resources/telegram.properties
-/src/main/resources/application.properties
 /mvnw
 /mvnw.cmd
 /src/main/resources/log4j2.xml
