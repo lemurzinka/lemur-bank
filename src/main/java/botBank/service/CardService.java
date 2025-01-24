@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -146,13 +147,26 @@ public class CardService {
             response.append("Card Number: ").append(card.getCardNumber())
                     .append("\nExpiry Date: ").append(card.getExpirationDate())
                     .append("\nCVV: ").append(card.getCvv())
-                    .append("\nCard Type: ").append(card.getCardType().toString().toLowerCase())
-                    .append("\nBalance: ").append(card.getAccount().getCurrentBalance())
-                    .append("\n-------------------------------------------------------------\n");
+                    .append("\nCard Type: ").append(card.getCardType().toString().toLowerCase());
+
+            BigDecimal currentBalance = card.getAccount().getCurrentBalance();
+            response.append("\nBalance: ").append(currentBalance);
+
+            if (card.getCardType() == CardType.CREDIT) {
+                BigDecimal creditBalance = card.getAccount().getCreditBalance();
+                BigDecimal debt = creditBalance.subtract(currentBalance);
+                if (debt.compareTo(BigDecimal.ZERO) > 0) {
+                    response.append(" (Debt: ").append(debt).append(" UAH)");
+                }
+            }
+
+            response.append("\n-------------------------------------------------------------\n");
         }
         LOGGER.info("Formatted card details for user");
         return response.toString();
     }
+
+
 
     @Transactional(readOnly = true)
     public List<Card> findAllCards() {
