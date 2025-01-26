@@ -8,6 +8,7 @@ import botBank.service.AccountService;
 import botBank.service.CreditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -16,8 +17,13 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class AccountServiceTest {
 
@@ -57,11 +63,15 @@ class AccountServiceTest {
     void testCreateAndSaveAccount() {
         User user = new User();
         Account account = accountService.createAccount(user);
-        assertNotNull(account.getAccountNumber());
-        assertEquals(user, account.getUser());
 
         accountService.createAndSaveAccount(user);
-        verify(accountRepository, times(1)).save(account);
+
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(1)).save(accountCaptor.capture());
+
+        Account capturedAccount = accountCaptor.getValue();
+        assertNotNull(capturedAccount.getAccountNumber());
+        assertEquals(user, capturedAccount.getUser());
     }
 
     @Test
