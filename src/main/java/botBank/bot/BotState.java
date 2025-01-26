@@ -466,19 +466,19 @@ public enum BotState {
         public void handleInput(BotContext context) {
             String amountStr = context.getInput();
             try {
-                BigDecimal senderAmount = parseAmount(amountStr, context);
+                BigDecimal senderAmount = context.getTransactionService().parseAmount(amountStr, context);
                 if (senderAmount == null) return;
 
-                if (!validateSenderDetails(context, senderAmount)) return;
+                if (!context.getTransactionService().validateSenderDetails(context, senderAmount)) return;
 
                 Account senderAccount = context.getCardService().findByCardNumber(context.getUser().getTransactionDetail().getSenderCardNumber())
                         .get().getAccount();
-                Account recipientAccount = getRecipientAccount(context);
+                Account recipientAccount = context.getTransactionService().getRecipientAccount(context);
 
-                BigDecimal recipientAmount = convertCurrencyIfNeeded(senderAccount, recipientAccount, senderAmount, context);
+                BigDecimal recipientAmount = context.getTransactionService().convertCurrencyIfNeeded(senderAccount, recipientAccount, senderAmount, context);
                 if (recipientAmount == null) return;
 
-                processTransaction(senderAccount, recipientAccount, senderAmount, recipientAmount, context);
+                context.getTransactionService().processTransaction(senderAccount, recipientAccount, senderAmount, recipientAmount, context);
 
               sendMessage(context, "Transaction is successful.");
             } catch (NumberFormatException e) {
@@ -899,128 +899,6 @@ public enum BotState {
 
         markup.setKeyboard(rows);
         return markup;
-    }
-
-    private static BigDecimal parseAmount(String amountStr, BotContext context) {
-        try {
-            BigDecimal senderAmount = new BigDecimal(amountStr);
-            if (senderAmount.compareTo(BigDecimal.ZERO) <= 0) {
-                LOGGER.warn("Invalid amount entered: {}", senderAmount);
-                sendMessage(context, "The amount must be greater than zero. Please, try again.");
-                return null;
-            }
-            context.getUser().getTransactionDetail().setAmount(senderAmount);
-            LOGGER.info("Amount for transaction: {}", senderAmount);
-            return senderAmount;
-        } catch (NumberFormatException e) {
-            LOGGER.error("Invalid amount format: {}", amountStr, e);
-            sendMessage(context, "Invalid amount format. Please, enter a valid number (e.g., 100.50).");
-            return null;
-        }
-    }
-
-    private static boolean validateSenderDetails(BotContext context, BigDecimal senderAmount) {
-        String senderCardNumber = context.getUser().getTransactionDetail().getSenderCardNumber();
-        String senderCvv = context.getUser().getTransactionDetail().getSenderCvv();
-        String senderExpDateStr = context.getUser().getTransactionDetail().getSenderExpDate();
-        LocalDate senderExpDate;
-
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            senderExpDate = LocalDate.parse(senderExpDateStr, formatter);
-        } catch (DateTimeParseException e) {
-            LOGGER.error("Invalid expiration date format: {}", senderExpDateStr, e);
-            sendMessage(context, "Invalid expiration date format. Use yyyy-MM-dd.");
-            return false;
-        }
-
-        Optional<Card> senderCardOpt = context.getCardService().findByCardNumber(senderCardNumber);
-        if (senderCardOpt.isEmpty() || !senderCardOpt.get().getCvv().equals(senderCvv)
-                || !senderCardOpt.get().getExpirationDate().equals(senderExpDate)) {
-            LOGGER.warn("Invalid or not found sender card details");
-            sendMessage(context, "Sender card details are invalid or not found.");
-            return false;
-        }
-
-        Card senderCard = senderCardOpt.get();
-        if (senderCard.isBanned()) {
-            LOGGER.warn("Sender card is banned: {}", senderCardNumber);
-            sendMessage(context, "Transaction cannot be processed because the sender's card is banned.");
-            return false;
-        }
-
-        Account senderAccount = senderCard.getAccount();
-        if (senderAccount.getCurrentBalance().compareTo(senderAmount) < 0) {
-            LOGGER.warn("Insufficient funds on sender's account: {}", senderAccount.getCurrentBalance());
-            sendMessage(context, "Insufficient funds on sender's account.");
-            return false;
-        }
-
-        return true;
-    }
-
-
-    private static Account getRecipientAccount(BotContext context) {
-        String recipientCardNumber = context.getUser().getTransactionDetail().getRecipientCardNumber();
-        Optional<Card> recipientCardOpt = context.getCardService().findByCardNumber(recipientCardNumber);
-        return recipientCardOpt.map(Card::getAccount).orElse(null);
-    }
-
-    private static BigDecimal convertCurrencyIfNeeded(Account senderAccount, Account recipientAccount, BigDecimal senderAmount, BotContext context) {
-        BigDecimal recipientAmount = senderAmount;
-        String senderCurrency = senderAccount.getCurrency();
-        String recipientCurrency = recipientAccount != null ? recipientAccount.getCurrency() : null;
-
-        if (recipientAccount != null && !senderCurrency.equals(recipientCurrency)) {
-            CurrencyRateService rateService = context.getCurrencyRateService();
-            Double rate = rateService.getRate(senderCurrency, recipientCurrency);
-            if (rate != null) {
-                recipientAmount = senderAmount.multiply(BigDecimal.valueOf(rate));
-            } else {
-                LOGGER.error("Currency conversion rate unavailable");
-               sendMessage(context, "Currency conversion rate is unavailable.");
-                return null;
-            }
-        }
-
-        return recipientAmount;
-    }
-
-    private static void processTransaction(Account senderAccount, Account recipientAccount, BigDecimal senderAmount, BigDecimal recipientAmount, BotContext context) {
-        senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
-        context.getAccountService().saveAccount(senderAccount);
-        LOGGER.info("Sender account balance updated: {}", senderAccount.getCurrentBalance());
-
-        if (recipientAccount != null) {
-            recipientAccount.setCurrentBalance(recipientAccount.getCurrentBalance().add(recipientAmount));
-            context.getAccountService().saveAccount(recipientAccount);
-            LOGGER.info("Recipient account balance updated: {}", recipientAccount.getCurrentBalance());
-        }
-
-        Transaction senderTransaction = new Transaction();
-        senderTransaction.setAccount(senderAccount);
-        senderTransaction.setTransactionType(TransactionType.TRANSFER);
-        senderTransaction.setAmount(senderAmount.negate());
-        senderTransaction.setTransactionDate(LocalDateTime.now());
-
-        if (recipientAccount != null) {
-            senderTransaction.setRecipientAccount(recipientAccount);
-        } else {
-            senderTransaction.setRecipientDetails("External recipient: " + context.getUser().getTransactionDetail().getRecipientCardNumber());
-        }
-        context.getTransactionService().saveTransaction(senderTransaction);
-        LOGGER.info("Sender transaction saved: {}", senderTransaction);
-
-        if (recipientAccount != null) {
-            Transaction recipientTransaction = new Transaction();
-            recipientTransaction.setAccount(recipientAccount);
-            recipientTransaction.setTransactionType(TransactionType.DEPOSIT);
-            recipientTransaction.setAmount(recipientAmount);
-            recipientTransaction.setTransactionDate(LocalDateTime.now());
-            recipientTransaction.setRecipientAccount(senderAccount);
-            context.getTransactionService().saveTransaction(recipientTransaction);
-            LOGGER.info("Recipient transaction saved: {}", recipientTransaction);
-        }
     }
 
 }
