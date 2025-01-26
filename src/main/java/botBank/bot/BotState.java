@@ -842,7 +842,8 @@ public enum BotState {
         sendMoneyButton.setText("Send money");
         sendMoneyButton.setCallbackData("/send");
 
-        rows.add(List.of(updateButton, addCardButton, myCardsButton, exchangeRateButton, sendMoneyButton));
+        rows.add(List.of(updateButton, addCardButton, myCardsButton));
+        rows.add(List.of(exchangeRateButton, sendMoneyButton));
 
         if (isAdmin) {
             InlineKeyboardButton listUsersButton = new InlineKeyboardButton();
@@ -873,15 +874,15 @@ public enum BotState {
             unbanCardButton.setText("Unban Card");
             unbanCardButton.setCallbackData("/unbancard");
 
-
-
-
-            rows.add(List.of(listUsersButton, banUserButton, unbanUserButton, listAccountsButton, listCardsButton, banCardButton, unbanCardButton));
+            rows.add(List.of(listUsersButton, banUserButton, unbanUserButton));
+            rows.add(List.of(listAccountsButton, listCardsButton, banCardButton));
+            rows.add(List.of(unbanCardButton));
         }
 
         markup.setKeyboard(rows);
         return markup;
     }
+
 
     private static InlineKeyboardMarkup createAddCardKeyboard() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
