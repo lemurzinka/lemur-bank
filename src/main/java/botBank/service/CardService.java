@@ -138,7 +138,11 @@ public class CardService {
     @Transactional(readOnly = true)
     public List<Card> getCardsByUserId(long userId) {
         LOGGER.info("Getting cards by user ID: {}", userId);
-        return cardRepository.findAllByUserId(userId);
+        List<Card> cards = cardRepository.findAllByUserId(userId);
+        if (cards.isEmpty()) {
+            LOGGER.info("No cards found for user ID: {}", userId);
+        }
+        return cards;
     }
 
     public String formatCardDetails(List<Card> cards) {
@@ -178,16 +182,21 @@ public class CardService {
         StringBuffer sb = new StringBuffer("All cards list:\r\n");
         List<Card> cards = findAllCards();
 
-        cards.forEach(card -> sb.append(card.getCardNumber())
-                .append(" ")
-                .append(card.getExpirationDate())
-                .append(" ")
-                .append(card.getCardType())
-                .append("\r\n"));
+        if (cards.isEmpty()) {
+            sb.append("No cards found.");
+        } else {
+            cards.forEach(card -> sb.append(card.getCardNumber())
+                    .append(" ")
+                    .append(card.getExpirationDate())
+                    .append(" ")
+                    .append(card.getCardType())
+                    .append("\r\n"));
+        }
 
         LOGGER.info("Listing all cards");
         sendMessage(context, sb.toString());
     }
+
 
     @Transactional
     public void updateCard(Card card) {

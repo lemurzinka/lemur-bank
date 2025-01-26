@@ -2,12 +2,14 @@ package botBank.service;
 
 import botBank.bot.BotContext;
 import botBank.bot.BotState;
+import botBank.model.Card;
 import botBank.model.User;
 import botBank.model.TransactionDetail;
 
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class CommandService {
@@ -69,8 +71,14 @@ public class CommandService {
                 user.setStateId(BotState.Menu.ordinal());
                 break;
             case "/mycards":
-                messageService.sendMessage(chatId, cardService.formatCardDetails(cardService.getCardsByUserId(user.getId())));
+                List<Card> userCards = cardService.getCardsByUserId(user.getId());
+                if (userCards.isEmpty()) {
+                    messageService.sendMessage(chatId, "No cards found for user ID: " + user.getId());
+                } else {
+                    messageService.sendMessage(chatId, cardService.formatCardDetails(userCards));
+                }
                 break;
+
             case "/rates":
                 messageService.sendMessage(chatId, rateService.getFormattedRates());
                 break;

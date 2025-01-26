@@ -148,7 +148,11 @@ public class AccountService {
         StringBuffer sb = new StringBuffer("All accounts list:\r\n");
         List<Account> accounts = findAllAccounts();
 
-        accounts.forEach(account -> sb.append(account.getAccountNumber())
+        if (accounts.isEmpty()) {
+            sb.append("No cards found.");
+        }
+
+            accounts.forEach(account -> sb.append(account.getAccountNumber())
                 .append(" ")
                 .append(account.getCurrentBalance())
                 .append(" ")

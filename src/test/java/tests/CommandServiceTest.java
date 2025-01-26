@@ -2,8 +2,7 @@ package tests;
 
 import botBank.bot.BotContext;
 import botBank.bot.BotState;
-import botBank.model.TransactionDetail;
-import botBank.model.User;
+import botBank.model.*;
 import botBank.service.AccountService;
 import botBank.service.CardAccountService;
 import botBank.service.CardService;
@@ -18,8 +17,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import botBank.bot.ChatBot;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
@@ -153,15 +154,43 @@ class CommandServiceTest {
     }
 
     @Test
-    void testHandleCommandMyCards() {
+    void testHandleCommandMyCards_NoCards() {
+
         when(user.getTelegramId()).thenReturn(123L);
         when(user.getId()).thenReturn(1L);
         when(cardService.getCardsByUserId(1L)).thenReturn(List.of());
 
+        // Викликаємо метод handleCommand
         commandService.handleCommand("/mycards", context);
 
-        verify(messageService).sendMessage(123L, cardService.formatCardDetails(cardService.getCardsByUserId(1L)));
+
+        verify(messageService).sendMessage(123L, "No cards found for user ID: 1");
     }
+
+    @Test
+    void testHandleCommandMyCards_WithCards() {
+
+        Card card = new Card();
+        card.setCardNumber("1234567890123456");
+        card.setExpirationDate(LocalDate.now().plusYears(1));
+        card.setCvv("123");
+        card.setCardType(CardType.DEBIT);
+        Account account = new Account();
+        account.setCurrentBalance(new BigDecimal("1000.00"));
+        card.setAccount(account);
+
+        when(user.getTelegramId()).thenReturn(123L);
+        when(user.getId()).thenReturn(1L);
+        when(cardService.getCardsByUserId(1L)).thenReturn(List.of(card));
+        when(cardService.formatCardDetails(anyList())).thenReturn("Formatted card details");
+
+
+        commandService.handleCommand("/mycards", context);
+
+
+        verify(messageService).sendMessage(123L, "Formatted card details");
+    }
+
 
     @Test
     void testHandleCommandRates() {
