@@ -11,7 +11,7 @@ public class BotEvent extends ApplicationEvent {
         this.context = context;
     }
 
-    public BotContext getContext() {
+     BotContext getContext() {
         return context;
     }
 }

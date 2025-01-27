@@ -3,10 +3,7 @@ package botBank.bot;
 
 import botBank.model.Account;
 import botBank.model.Card;
-import botBank.model.Transaction;
-import botBank.model.TransactionType;
 import botBank.model.User;
-import botBank.service.CurrencyRateService;
 import botBank.service.ValidationService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -15,13 +12,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -69,7 +61,7 @@ public enum BotState {
         public void enter(BotContext context) {
             LOGGER.info("Entering EnterPhone state");
             sendMessage(context, "Please share your phone number so we can verify your identity and ensure a smooth experience.\n" +
-                    "Just type your phone number below (including the country code, e.g., +1234567890).");
+                    "Just type your phone number below (you can include the country code, e.g., +1234567890).");
         }
 
         @Override

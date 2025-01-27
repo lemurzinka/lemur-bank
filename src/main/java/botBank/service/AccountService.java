@@ -71,7 +71,7 @@ public class AccountService {
         }
     }
 
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "0 0 0 1 * *")
     @Transactional
     public void scheduledCheckAndApplyCredits() {
         LOGGER.info("Scheduled check and apply credits started");
@@ -89,8 +89,8 @@ public class AccountService {
         LOGGER.info("Verifying and saving account: {}", account.getAccountNumber());
 
         while (accountRepository.existsByAccountNumber(account.getAccountNumber())) {
-            account.setAccountNumber(generateAccountNumber());
             LOGGER.warn("Duplicate account number found, generating new number: {}", account.getAccountNumber());
+            account.setAccountNumber(generateAccountNumber());
         }
         accountRepository.save(account);
     }
