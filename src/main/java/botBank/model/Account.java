@@ -1,5 +1,6 @@
 package botBank.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +19,9 @@ import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -55,7 +58,8 @@ public class Account {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Credit> credits = new HashSet<>();
+    @JsonManagedReference
+    private List<Credit> credits = new ArrayList<>();
 
     @Column(name = "last_checked_date", nullable = true)
     private LocalDateTime lastCheckedDate;

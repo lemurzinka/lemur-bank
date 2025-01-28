@@ -511,12 +511,12 @@ public enum BotState {
                 next = Menu;
             } else {
                 LOGGER.warn("Invalid password format");
-                sendMessage(context, "Invalid password format!");
+                sendMessage(context, "Invalid password format! Use One big and small letter, one digit and one special symbol (no spaces!!!)");
+                deleteMessage(context, messageId);
                 counterOfInputProblem++;
                 if (counterOfInputProblem > 3) {
                     LOGGER.warn("Input problem exceeded limit in EnterPassword state");
                     sendMessage(context, "Input problem, return to start.");
-                    deleteMessage(context, messageId);
                     next = Start;
                 } else {
                     sendMessage(context, "Enter your password again please:");
@@ -557,11 +557,11 @@ public enum BotState {
             } else {
                 LOGGER.warn("Invalid password format or wrong password entered");
                 sendMessage(context, "Invalid password format or wrong password");
+                deleteMessage(context, messageId);
                 counterOfInputProblem++;
                 if (counterOfInputProblem > 3) {
                     LOGGER.warn("Input problem exceeded limit in EnterPasswordForTransaction state");
                     sendMessage(context, "Input problem, return to Menu.");
-                    deleteMessage(context, messageId);
                     next = Menu;
                 } else {
                     sendMessage(context, "Enter your password again please:");

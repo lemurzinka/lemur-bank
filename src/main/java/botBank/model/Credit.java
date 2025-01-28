@@ -1,5 +1,6 @@
 package botBank.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -41,6 +42,7 @@ public class Credit implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
+    @JsonBackReference
     private Account account;
 
 

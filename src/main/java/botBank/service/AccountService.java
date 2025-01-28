@@ -26,57 +26,13 @@ public class AccountService {
     @Autowired
     private final AccountRepository accountRepository;
 
-    private final CreditService creditService;
 
-    public AccountService(AccountRepository accountRepository, CreditService creditService) {
+    public AccountService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
-        this.creditService = creditService;
+
     }
 
-    @Transactional
-    public void checkAndApplyCredits() {
-        LOGGER.info("Checking and applying credits");
-        List<Account> accounts = accountRepository.findAllByCurrentBalanceLessThanCreditBalance();
 
-        for (Account account : accounts) {
-            LocalDateTime currentDateTime = LocalDateTime.now();
-            LocalDateTime lastCheckedDateTime = account.getLastCheckedDate() != null
-                    ? account.getLastCheckedDate()
-                    : account.getCreatedAt();
-
-            long monthsBetween = ChronoUnit.MONTHS.between(lastCheckedDateTime, currentDateTime);
-
-            if (monthsBetween >= 1) {
-                BigDecimal debt = account.getCreditBalance().subtract(account.getCurrentBalance());
-
-                if (debt.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal interest = debt.multiply(new BigDecimal(0.05));
-                    account.setCurrentBalance(account.getCurrentBalance().subtract(interest));
-
-                    Credit credit = new Credit();
-                    credit.setInterestRate(interest.doubleValue());
-                    credit.setAmount(debt.add(interest).doubleValue());
-                    credit.setStartDate(account.getCreatedAt());
-                    credit.setEndDate(currentDateTime.plusMonths(1));
-                    credit.setAccount(account);
-
-                    creditService.save(credit);
-                    LOGGER.info("Credit applied to account: {}", account.getAccountNumber());
-                }
-
-                account.setLastCheckedDate(currentDateTime);
-                accountRepository.save(account);
-                LOGGER.info("Account updated with last checked date: {}", account.getAccountNumber());
-            }
-        }
-    }
-
-    @Scheduled(cron = "0 0 0 1 * *")
-    @Transactional
-    public void scheduledCheckAndApplyCredits() {
-        LOGGER.info("Scheduled check and apply credits started");
-        checkAndApplyCredits();
-    }
 
     @Transactional
     public void saveAccount(Account account) {

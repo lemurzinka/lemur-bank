@@ -73,7 +73,7 @@ public class CommandService {
             case "/mycards":
                 List<Card> userCards = cardService.getCardsByUserId(user.getId());
                 if (userCards.isEmpty()) {
-                    messageService.sendMessage(chatId, "No cards found for user ID: " + user.getId());
+                    messageService.sendMessage(chatId, "No cards now");
                 } else {
                     messageService.sendMessage(chatId, cardService.formatCardDetails(userCards));
                 }

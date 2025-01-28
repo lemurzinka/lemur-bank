@@ -2,7 +2,11 @@ package tests;
 
 import botBank.bot.BotContext;
 import botBank.bot.BotState;
-import botBank.model.*;
+import botBank.model.Account;
+import botBank.model.Card;
+import botBank.model.CardType;
+import botBank.model.TransactionDetail;
+import botBank.model.User;
 import botBank.service.AccountService;
 import botBank.service.CardAccountService;
 import botBank.service.CardService;
@@ -160,11 +164,10 @@ class CommandServiceTest {
         when(user.getId()).thenReturn(1L);
         when(cardService.getCardsByUserId(1L)).thenReturn(List.of());
 
-        // Викликаємо метод handleCommand
         commandService.handleCommand("/mycards", context);
 
 
-        verify(messageService).sendMessage(123L, "No cards found for user ID: 1");
+        verify(messageService).sendMessage(123L, "No cards now");
     }
 
     @Test
