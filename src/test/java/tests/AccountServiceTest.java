@@ -56,7 +56,6 @@ class AccountServiceTest {
     @Test
     void testCreateAndSaveAccount() {
         User user = new User();
-        Account account = accountService.createAccount(user);
 
         accountService.createAndSaveAccount(user);
 

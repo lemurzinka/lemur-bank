@@ -115,9 +115,6 @@ class UserServiceTest {
 
         userService.listUsers(context);
 
-        String expectedMessage = "All users list:\r\n" +
-                "123 123-456-7890 user1@example.com\r\n" +
-                "456 456-789-0123 user2@example.com\r\n";
 
         verify(bot, times(1)).execute(any(SendMessage.class));
         verify(context, times(1)).getBot();

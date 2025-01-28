@@ -39,6 +39,7 @@ public class CardService {
         LOGGER.info("Finding card by card number: {}", cardNumber);
         return cardRepository.findByCardNumber(cardNumber).orElse(null);
     }
+
     @Transactional(readOnly = true)
     public Optional<Card> findByCardNumber(String cardNumber) {
         LOGGER.info("Finding card by card number: {}", cardNumber);
@@ -125,12 +126,15 @@ public class CardService {
     }
 
     public Card createCard(String type) {
-        Card card = new Card();
-        card.setExpirationDate(generateExpirationDate());
-        card.setCvv(generateCVV());
         CardType enumType = CardType.valueOf(type);
-        card.setCardNumber(generateCardNumber(enumType));
-        card.setCardType(enumType);
+
+        Card card = Card.builder()
+                .expirationDate(generateExpirationDate())
+                .cvv(generateCVV())
+                .cardNumber(generateCardNumber(enumType))
+                .cardType(enumType)
+                .build();
+
         LOGGER.info("Created card: {}", card.getCardNumber());
         return card;
     }
@@ -170,8 +174,6 @@ public class CardService {
         return response.toString();
     }
 
-
-
     @Transactional(readOnly = true)
     public List<Card> findAllCards() {
         LOGGER.info("Finding all cards");
@@ -197,14 +199,12 @@ public class CardService {
         sendMessage(context, sb.toString());
     }
 
-
     @Transactional
     public void updateCard(Card card) {
         LOGGER.info("Updating card (before save): {}", card);
         cardRepository.save(card);
         entityManager.flush(); // Ensure changes are persisted immediately
         LOGGER.info("Updating card (after flush): {}", card);
-
 
         Optional<Card> updatedCardOpt = cardRepository.findById(card.getId());
         if (updatedCardOpt.isPresent()) {

@@ -1,13 +1,20 @@
 package tests;
 
-import botBank.bot.BotContext;
 import botBank.bot.ChatBot;
 import botBank.event.BotEvent;
 import botBank.model.User;
-import botBank.service.*;
+import botBank.service.AccountService;
+import botBank.service.CardAccountService;
+import botBank.service.CardService;
+import botBank.service.CurrencyRateService;
+import botBank.service.TransactionService;
+import botBank.service.UserService;
+import botBank.service.ValidationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;

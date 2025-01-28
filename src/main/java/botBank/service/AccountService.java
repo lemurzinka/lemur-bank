@@ -1,38 +1,29 @@
 package botBank.service;
 
+
 import botBank.bot.BotContext;
 import botBank.model.Account;
-import botBank.model.Credit;
 import botBank.model.User;
 import botBank.repo.AccountRepository;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.scheduling.annotation.Scheduled;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+
 import java.util.List;
 
 import static botBank.service.UserService.sendMessage;
 
+
 @Service
+@AllArgsConstructor
 public class AccountService {
 
     private static final Logger LOGGER = LogManager.getLogger(AccountService.class);
 
-    @Autowired
     private final AccountRepository accountRepository;
-
-
-    public AccountService(AccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
-
-    }
-
-
 
     @Transactional
     public void saveAccount(Account account) {
@@ -78,11 +69,11 @@ public class AccountService {
 
     public Account createAccount(User user) {
         LOGGER.info("Creating account for user: {}", user.getId());
-        Account account = new Account();
-        account.setAccountNumber(generateAccountNumber());
-        account.setUser(user);
 
-        return account;
+        return Account.builder()
+                .accountNumber(generateAccountNumber())
+                .user(user)
+                .build();
     }
 
     @Transactional
@@ -91,8 +82,6 @@ public class AccountService {
         Account account = createAccount(user);
         verifyAndSaveAccount(account);
     }
-
-
 
     @Transactional(readOnly = true)
     public List<Account> findAllAccounts() {
@@ -108,7 +97,7 @@ public class AccountService {
             sb.append("No cards found.");
         }
 
-            accounts.forEach(account -> sb.append(account.getAccountNumber())
+        accounts.forEach(account -> sb.append(account.getAccountNumber())
                 .append(" ")
                 .append(account.getCurrentBalance())
                 .append(" ")
@@ -118,6 +107,4 @@ public class AccountService {
         LOGGER.info("Listing all accounts");
         sendMessage(context, sb.toString());
     }
-
-
 }

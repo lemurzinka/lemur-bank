@@ -1,6 +1,5 @@
 package botBank.model;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 
 import javax.persistence.Column;
@@ -19,7 +18,9 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 @Table(name = "transaction")
 public class Transaction {

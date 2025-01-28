@@ -1,8 +1,7 @@
 package botBank.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -20,13 +19,15 @@ import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "account")
 public class Account {

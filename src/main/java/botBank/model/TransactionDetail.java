@@ -1,5 +1,9 @@
 package botBank.model;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,7 +16,9 @@ import javax.persistence.Table;
 import java.math.BigDecimal;
 
 
-
+@Getter
+@Setter
+@ToString
 @Entity
 @Table(name = "transaction_detail")
 public class TransactionDetail {
@@ -50,51 +56,5 @@ public class TransactionDetail {
         this.amount = amount;
     }
 
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getSenderCardNumber() {
-        return senderCardNumber;
-    }
-
-    public void setSenderCardNumber(String senderCardNumber) {
-        this.senderCardNumber = senderCardNumber;
-    }
-
-    public String getSenderCvv() {
-        return senderCvv;
-    }
-
-    public void setSenderCvv(String senderCvv) {
-        this.senderCvv = senderCvv;
-    }
-
-    public String getSenderExpDate() {
-        return senderExpDate;
-    }
-
-    public void setSenderExpDate(String senderExpDate) {
-        this.senderExpDate = senderExpDate;
-    }
-
-    public String getRecipientCardNumber() {
-        return recipientCardNumber;
-    }
-
-    public void setRecipientCardNumber(String recipientCardNumber) {
-        this.recipientCardNumber = recipientCardNumber;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
 }

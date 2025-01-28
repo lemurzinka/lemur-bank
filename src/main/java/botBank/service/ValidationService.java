@@ -12,7 +12,8 @@ public class ValidationService {
 
     private static final Pattern PHONE_NUMBER_PATTERN = Pattern.compile("^\\+?\\d{10,15}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(
-            "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#\\$%\\^&\\*])(?=\\S+$).{6,}$");  // One big&&small letter, one digit, one special symbol, no spaces
+            "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#\\$%^&*])(?!.*\\s).{6,}$"
+    );  // One uppercase, one lowercase letter, one digit, one special character, no spaces
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 

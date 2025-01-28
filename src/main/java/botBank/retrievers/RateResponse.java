@@ -18,15 +18,9 @@ public class RateResponse {
         return success;
     }
 
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
 
     public Map<String, Double> getRates() {
         return rates;
     }
 
-    public void setRates(Map<String, Double> rates) {
-        this.rates = rates;
-    }
 }

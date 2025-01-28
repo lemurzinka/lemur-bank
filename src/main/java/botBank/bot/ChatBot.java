@@ -10,6 +10,7 @@ import botBank.service.CurrencyRateService;
 import botBank.service.TransactionService;
 import botBank.service.UserService;
 import botBank.service.ValidationService;
+import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;

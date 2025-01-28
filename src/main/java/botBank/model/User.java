@@ -1,7 +1,6 @@
 package botBank.model;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 
 import javax.persistence.CascadeType;
@@ -23,7 +22,9 @@ import java.util.List;
 
 
 @Entity
-@Data @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "user")
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
