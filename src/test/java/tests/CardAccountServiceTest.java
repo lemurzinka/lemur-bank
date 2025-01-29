@@ -4,24 +4,24 @@ import botBank.bot.BotContext;
 import botBank.bot.ChatBot;
 import botBank.model.Account;
 import botBank.model.Card;
+import botBank.model.CardType;
 import botBank.model.User;
 import botBank.service.AccountService;
 import botBank.service.CardAccountService;
 import botBank.service.CardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class CardAccountServiceTest {
 
@@ -37,8 +37,8 @@ class CardAccountServiceTest {
     @Mock
     private User user;
 
-     @Mock
-     private ChatBot bot;
+    @Mock
+    private ChatBot bot;
 
     private CardAccountService cardAccountService;
 
@@ -54,37 +54,61 @@ class CardAccountServiceTest {
     void testCreateCreditCardAndAccount() throws TelegramApiException {
         BigDecimal initialBalance = BigDecimal.valueOf(1000);
         String currency = "USD";
-        Card card = new Card();
-        Account account = new Account();
+        String accountNumber = "123456";
+        String cardNumber = "654321";
+        String cvv = "123";
+        LocalDate expirationDate = LocalDate.now().plusYears(3);
+
         when(user.getId()).thenReturn(123L);
-        when(cardService.createCard("CREDIT")).thenReturn(card);
-        when(accountService.createAccount(user)).thenReturn(account);
+        when(accountService.generateAccountNumber()).thenReturn(accountNumber);
+        when(cardService.generateCardNumber(CardType.CREDIT)).thenReturn(cardNumber);
+        when(cardService.generateCVV()).thenReturn(cvv);
+        when(cardService.generateExpirationDate()).thenReturn(expirationDate);
 
         cardAccountService.createCreditCardAndAccount(user, initialBalance, currency, context);
 
-        verify(accountService, times(1)).verifyAndSaveAccount(account);
-        verify(cardService, times(1)).addCard(card);
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountService, times(1)).verifyAndSaveAccount(accountCaptor.capture());
+        Account capturedAccount = accountCaptor.getValue();
+
+        ArgumentCaptor<Card> cardCaptor = ArgumentCaptor.forClass(Card.class);
+        verify(cardService, times(1)).addCard(cardCaptor.capture());
+        Card capturedCard = cardCaptor.getValue();
+
         verify(bot, times(1)).execute(any(SendMessage.class));
-        assertEquals(initialBalance, account.getCreditBalance());
-        assertEquals(initialBalance, account.getCurrentBalance());
-        assertEquals(currency, account.getCurrency());
+
+        assertEquals(initialBalance, capturedAccount.getCreditBalance());
+        assertEquals(initialBalance, capturedAccount.getCurrentBalance());
+        assertEquals(currency, capturedAccount.getCurrency());
     }
 
     @Test
     void testCreateDebitCardAndAccount() throws TelegramApiException {
         String currency = "USD";
-        Card card = new Card();
-        Account account = new Account();
+        String accountNumber = "123456";
+        String cardNumber = "654321";
+        String cvv = "123";
+        LocalDate expirationDate = LocalDate.now().plusYears(3);
+
         when(user.getId()).thenReturn(123L);
-        when(cardService.createCard("DEBIT")).thenReturn(card);
-        when(accountService.createAccount(user)).thenReturn(account);
+        when(accountService.generateAccountNumber()).thenReturn(accountNumber);
+        when(cardService.generateCardNumber(CardType.DEBIT)).thenReturn(cardNumber);
+        when(cardService.generateCVV()).thenReturn(cvv);
+        when(cardService.generateExpirationDate()).thenReturn(expirationDate);
 
         cardAccountService.createDebitCardAndAccount(user, currency, context);
 
-        verify(accountService, times(1)).verifyAndSaveAccount(account);
-        verify(cardService, times(1)).addCard(card);
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountService, times(1)).verifyAndSaveAccount(accountCaptor.capture());
+        Account capturedAccount = accountCaptor.getValue();
+
+        ArgumentCaptor<Card> cardCaptor = ArgumentCaptor.forClass(Card.class);
+        verify(cardService, times(1)).addCard(cardCaptor.capture());
+        Card capturedCard = cardCaptor.getValue();
+
         verify(bot, times(1)).execute(any(SendMessage.class));
-        assertEquals(BigDecimal.ZERO, account.getCurrentBalance());
-        assertEquals(currency, account.getCurrency());
+
+        assertEquals(BigDecimal.ZERO, capturedAccount.getCurrentBalance());
+        assertEquals(currency, capturedAccount.getCurrency());
     }
 }
