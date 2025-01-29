@@ -3,6 +3,7 @@ package botBank.service;
 import botBank.bot.BotContext;
 import botBank.model.User;
 import botBank.repo.UserRepository;
+import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -13,15 +14,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class UserService {
 
     private static final Logger LOGGER = LogManager.getLogger(UserService.class);
 
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+
 
     @Transactional(readOnly = true)
     public User findByTelegramId(Long telegramId) {

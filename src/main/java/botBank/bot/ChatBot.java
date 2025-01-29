@@ -10,7 +10,7 @@ import botBank.service.CurrencyRateService;
 import botBank.service.TransactionService;
 import botBank.service.UserService;
 import botBank.service.ValidationService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 
 @Component
 @PropertySource("classpath:telegram.properties")
+@RequiredArgsConstructor
 public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
 
     private static final Logger LOGGER = LogManager.getLogger(ChatBot.class);
@@ -49,18 +50,6 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
     @Value("${bot.token}")
     private String botToken;
 
-    public ChatBot(UserService userService, ApplicationEventPublisher eventPublisher,
-                   CardService cardService, CardAccountService cardAccountService, TransactionService transactionService,
-                   AccountService accountService, CurrencyRateService currencyRateService, ValidationService validationService) {
-        this.userService = userService;
-        this.eventPublisher = eventPublisher;
-        this.cardService = cardService;
-        this.cardAccountService = cardAccountService;
-        this.transactionService = transactionService;
-        this.accountService = accountService;
-        this.currencyRateService = currencyRateService;
-        this.validationService = validationService;
-    }
 
     @Override
     public String getBotUsername() {
@@ -101,7 +90,8 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
                 return;
             }
 
-            BotContext context = BotContext.of(this, user, callbackData, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService, validationService);
+            BotContext context = BotContext.of(this, user, callbackData, messageId, userService, cardService,
+                    cardAccountService, transactionService, accountService, currencyRateService, validationService);
             eventPublisher.publishEvent(new BotEvent(this, context));
 
         } else if (update.hasMessage() && update.getMessage().hasText()) {
@@ -112,7 +102,8 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
             LOGGER.info("Received message: {} from chat ID: {}", text, chatId);
 
             User user = userService.findByTelegramId(chatId);
-            BotContext context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService, validationService);
+            BotContext context = BotContext.of(this, user, text, messageId, userService, cardService,
+                    cardAccountService, transactionService, accountService, currencyRateService, validationService);
 
             BotState state;
 
@@ -121,7 +112,8 @@ public class ChatBot extends TelegramLongPollingBot implements BotExecutor {
                 state = BotState.getInitialState();
                 user = new User(chatId, state.ordinal());
                 userService.addUser(user);
-                context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService, transactionService, accountService, currencyRateService, validationService);
+                context = BotContext.of(this, user, text, messageId, userService, cardService, cardAccountService,
+                        transactionService, accountService, currencyRateService, validationService);
 
                 state.enter(context);
             } else {

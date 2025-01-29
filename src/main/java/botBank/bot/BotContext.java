@@ -8,7 +8,10 @@ import botBank.service.CurrencyRateService;
 import botBank.service.TransactionService;
 import botBank.service.UserService;
 import botBank.service.ValidationService;
+import lombok.Getter;
 
+
+@Getter
 public class BotContext {
     private final ChatBot bot;
     private final User user;
@@ -45,47 +48,4 @@ public class BotContext {
         this.validationService = validationService;
     }
 
-    public ChatBot getBot() {
-        return bot;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getInput() {
-        return input;
-    }
-
-    public Integer getMessageId() {
-        return messageId;
-    }
-
-    public UserService getUserService() {
-        return userService;
-    }
-
-    public CardService getCardService() {
-        return cardService;
-    }
-
-    public CardAccountService getCardAccountService() {
-        return cardAccountService;
-    }
-
-    public TransactionService getTransactionService() {
-        return transactionService;
-    }
-
-    public AccountService getAccountService() {
-        return accountService;
-    }
-
-    public CurrencyRateService getCurrencyRateService() {
-        return currencyRateService;
-    }
-
-    public ValidationService getValidationService() {
-        return validationService;
-    }
 }

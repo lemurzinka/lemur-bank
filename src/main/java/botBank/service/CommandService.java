@@ -6,12 +6,14 @@ import botBank.model.Card;
 import botBank.model.User;
 import botBank.model.TransactionDetail;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CommandService {
 
     private final UserService userService;
@@ -22,15 +24,6 @@ public class CommandService {
     private final AccountService accountService;
     private final MessageService messageService;
 
-    public CommandService(UserService userService, CardService cardService, CardAccountService cardAccountService, CurrencyRateService rateService, TransactionService transactionService, AccountService accountService, MessageService messageService) {
-        this.userService = userService;
-        this.cardService = cardService;
-        this.cardAccountService = cardAccountService;
-        this.rateService = rateService;
-        this.transactionService = transactionService;
-        this.accountService = accountService;
-        this.messageService = messageService;
-    }
 
     public void handleCommand(String callbackData, BotContext context) {
         User user = context.getUser();

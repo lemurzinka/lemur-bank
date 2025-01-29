@@ -4,6 +4,7 @@ import botBank.bot.BotContext;
 import botBank.model.Card;
 import botBank.model.CardType;
 import botBank.repo.CardRepository;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.Random;
 import static botBank.service.UserService.sendMessage;
 
 @Service
+@RequiredArgsConstructor
 public class CardService {
 
     private static final Logger LOGGER = LogManager.getLogger(CardService.class);
@@ -30,9 +32,6 @@ public class CardService {
 
     private final CardRepository cardRepository;
 
-    public CardService(CardRepository cardRepository) {
-        this.cardRepository = cardRepository;
-    }
 
     @Transactional(readOnly = true)
     public Card findCardByCardNumber(String cardNumber) {

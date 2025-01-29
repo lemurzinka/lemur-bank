@@ -128,7 +128,9 @@ public class TransactionService {
         return recipientAmount;
     }
 
-    public void processTransaction(Account senderAccount, Account recipientAccount, BigDecimal senderAmount, BigDecimal recipientAmount, BotContext context) {
+    @Transactional
+    public void processTransaction(Account senderAccount, Account recipientAccount, BigDecimal senderAmount,
+                                   BigDecimal recipientAmount, BotContext context) {
         senderAccount.setCurrentBalance(senderAccount.getCurrentBalance().subtract(senderAmount));
         accountService.saveAccount(senderAccount);
         LOGGER.info("Sender account balance updated: {}", senderAccount.getCurrentBalance());
@@ -139,31 +141,36 @@ public class TransactionService {
             LOGGER.info("Recipient account balance updated: {}", recipientAccount.getCurrentBalance());
         }
 
-        Transaction senderTransaction = new Transaction();
-        senderTransaction.setAccount(senderAccount);
-        senderTransaction.setTransactionType(TransactionType.TRANSFER);
-        senderTransaction.setAmount(senderAmount.negate());
-        senderTransaction.setTransactionDate(LocalDateTime.now());
+        Transaction.TransactionBuilder senderTransactionBuilder = Transaction.builder()
+                .account(senderAccount)
+                .transactionType(TransactionType.TRANSFER)
+                .amount(senderAmount.negate())
+                .transactionDate(LocalDateTime.now());
 
         if (recipientAccount != null) {
-            senderTransaction.setRecipientAccount(recipientAccount);
+            senderTransactionBuilder.recipientAccount(recipientAccount);
         } else {
-            senderTransaction.setRecipientDetails("External recipient: " + context.getUser().getTransactionDetail().getRecipientCardNumber());
+            senderTransactionBuilder.recipientDetails("External recipient: " + context.getUser().getTransactionDetail().getRecipientCardNumber());
         }
+
+        Transaction senderTransaction = senderTransactionBuilder.build();
         transactionRepository.save(senderTransaction);
         LOGGER.info("Sender transaction saved: {}", senderTransaction);
 
         if (recipientAccount != null) {
-            Transaction recipientTransaction = new Transaction();
-            recipientTransaction.setAccount(recipientAccount);
-            recipientTransaction.setTransactionType(TransactionType.DEPOSIT);
-            recipientTransaction.setAmount(recipientAmount);
-            recipientTransaction.setTransactionDate(LocalDateTime.now());
-            recipientTransaction.setRecipientAccount(senderAccount);
+            Transaction recipientTransaction = Transaction.builder()
+                    .account(recipientAccount)
+                    .transactionType(TransactionType.DEPOSIT)
+                    .amount(recipientAmount)
+                    .transactionDate(LocalDateTime.now())
+                    .recipientAccount(senderAccount)
+                    .build();
+
             transactionRepository.save(recipientTransaction);
             LOGGER.info("Recipient transaction saved: {}", recipientTransaction);
         }
     }
+
 
     public static void sendMessage(BotContext context, String text) {
         SendMessage message = new SendMessage();

@@ -55,17 +55,29 @@ public class CardAccountService {
 
     public void createDebitCardAndAccount(User user, String currency, BotContext context) {
         LOGGER.info("Creating debit card and account for user: {}, currency: {}", user.getId(), currency);
-        Card card = cardService.createCard("DEBIT");
-        Account account = accountService.createAccount(user);
-        account.setCurrentBalance(BigDecimal.ZERO);
-        account.setCurrency(currency);
+
+        Account account = Account.builder()
+                .accountNumber(accountService.generateAccountNumber())
+                .user(user)
+                .currentBalance(BigDecimal.ZERO)
+                .currency(currency)
+                .build();
+
         accountService.verifyAndSaveAccount(account);
 
-        card.setUser(user);
-        card.setAccount(account);
+        Card card = Card.builder()
+                .expirationDate(cardService.generateExpirationDate())
+                .cvv(cardService.generateCVV())
+                .cardNumber(cardService.generateCardNumber(CardType.DEBIT))
+                .cardType(CardType.DEBIT)
+                .user(user)
+                .account(account)
+                .build();
+
         cardService.addCard(card);
         sendMessage(context, "You created a debit card. You can see more info in menu (my cards).");
     }
+
 
     private static void sendMessage(BotContext context, String text) {
         SendMessage message = new SendMessage();

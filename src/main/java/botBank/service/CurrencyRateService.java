@@ -1,6 +1,7 @@
 package botBank.service;
 
 import botBank.retrievers.RateRetriever;
+import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -8,15 +9,13 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 @Service
+@AllArgsConstructor
 public class CurrencyRateService {
 
     private static final Logger LOGGER = LogManager.getLogger(CurrencyRateService.class);
 
     private final RateRetriever rateRetriever;
 
-    public CurrencyRateService(RateRetriever rateRetriever) {
-        this.rateRetriever = rateRetriever;
-    }
 
     public Double getRate(String fromCurrency, String toCurrency) {
         LOGGER.info("Getting rate from {} to {}", fromCurrency, toCurrency);
@@ -76,7 +75,7 @@ public class CurrencyRateService {
             Double usdToUah = 1.0 / uahToUsd;
 
             String formattedRates = String.format(
-                    "Курси валют:\n" +
+                    "Exchange rates:\n" +
                             "EUR → USD: %.2f\n" +
                             "USD → EUR: %.2f\n" +
                             "UAH → EUR: %.2f\n" +

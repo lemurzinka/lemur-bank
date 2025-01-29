@@ -463,14 +463,17 @@ public enum BotState {
 
                 if (!context.getTransactionService().validateSenderDetails(context, senderAmount)) return;
 
-                Account senderAccount = context.getCardService().findByCardNumber(context.getUser().getTransactionDetail().getSenderCardNumber())
+                Account senderAccount = context.getCardService().findByCardNumber(context.getUser().
+                                getTransactionDetail().getSenderCardNumber())
                         .get().getAccount();
                 Account recipientAccount = context.getTransactionService().getRecipientAccount(context);
 
-                BigDecimal recipientAmount = context.getTransactionService().convertCurrencyIfNeeded(senderAccount, recipientAccount, senderAmount, context);
+                BigDecimal recipientAmount = context.getTransactionService().convertCurrencyIfNeeded(senderAccount,
+                        recipientAccount, senderAmount, context);
                 if (recipientAmount == null) return;
 
-                context.getTransactionService().processTransaction(senderAccount, recipientAccount, senderAmount, recipientAmount, context);
+                context.getTransactionService().processTransaction(senderAccount, recipientAccount,
+                        senderAmount, recipientAmount, context);
 
               sendMessage(context, "Transaction is successful.");
             } catch (NumberFormatException e) {
@@ -511,7 +514,8 @@ public enum BotState {
                 next = Menu;
             } else {
                 LOGGER.warn("Invalid password format");
-                sendMessage(context, "Invalid password format! Use One big and small letter, one digit and one special symbol (no spaces!!!)");
+                sendMessage(context, "Invalid password format! Use One big and small letter, one digit and one " +
+                        "special symbol (no spaces!!!)");
                 deleteMessage(context, messageId);
                 counterOfInputProblem++;
                 if (counterOfInputProblem > 3) {

@@ -4,6 +4,7 @@ import botBank.model.Account;
 import botBank.model.Credit;
 import botBank.repo.AccountRepository;
 import botBank.repo.CreditRepository;
+import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class CreditService {
 
     private static final Logger LOGGER = LogManager.getLogger(CreditService.class);
@@ -23,10 +25,6 @@ public class CreditService {
     private final CreditRepository creditRepository;
     private final AccountRepository accountRepository;
 
-    public CreditService(CreditRepository creditRepository, AccountRepository accountRepository) {
-        this.creditRepository = creditRepository;
-        this.accountRepository = accountRepository;
-    }
 
     @Transactional
     public void save(Credit credit) {
@@ -63,12 +61,13 @@ public class CreditService {
                     account.setCurrentBalance(account.getCurrentBalance().subtract(interest));
                     LOGGER.debug("Interest applied: {}", interest);
 
-                    Credit credit = new Credit();
-                    credit.setInterestRate(interest.doubleValue());
-                    credit.setAmount(debt.add(interest).doubleValue());
-                    credit.setStartDate(account.getCreatedAt());
-                    credit.setEndDate(currentDateTime.plusMonths(1));
-                    credit.setAccount(account);
+                    Credit credit = Credit.builder()
+                            .interestRate(interest.doubleValue())
+                            .amount(debt.add(interest).doubleValue())
+                            .startDate(account.getCreatedAt())
+                            .endDate(currentDateTime.plusMonths(1))
+                            .account(account)
+                            .build();
 
                     save(credit);
                     LOGGER.info("Credit applied to account: {}", account.getAccountNumber());
@@ -81,6 +80,7 @@ public class CreditService {
             }
         }
     }
+
 
     @Scheduled(cron = "0 0 0 1 * *")
     @Transactional
