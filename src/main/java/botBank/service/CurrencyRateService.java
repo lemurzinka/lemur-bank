@@ -8,6 +8,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/**
+ * CurrencyRateService provides methods to retrieve and calculate currency exchange rates.
+ * It uses RateRetriever to get the latest rates and offers methods to get specific rates and
+ * formatted rate information for different currencies.
+ */
+
 @Service
 @AllArgsConstructor
 public class CurrencyRateService {

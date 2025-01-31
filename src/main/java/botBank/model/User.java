@@ -1,6 +1,10 @@
 package botBank.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 
 import javax.persistence.CascadeType;
@@ -20,6 +24,11 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * User represents a user entity in the application, containing user details such as
+ * personal information, associated cards, accounts, and user state. This entity is used
+ * to manage user-related operations and interactions within the system.
+ */
 
 @Entity
 @Getter

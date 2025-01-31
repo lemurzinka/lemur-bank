@@ -6,7 +6,6 @@ import botBank.model.Account;
 import botBank.model.User;
 import botBank.repo.AccountRepository;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -16,6 +15,11 @@ import java.util.List;
 
 import static botBank.service.UserService.sendMessage;
 
+/**
+ * AccountService provides methods for managing bank accounts, including creating, saving, verifying,
+ * and listing accounts. It also handles account number generation and ensuring unique account numbers.
+ * This service interacts with the AccountRepository to perform database operations.
+ */
 
 @Service
 @AllArgsConstructor

@@ -20,6 +20,12 @@ import javax.persistence.Table;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+
+/**
+ * Credit represents a credit entity associated with an account.
+ * This entity is used to manage credit-related operations.
+ */
+
 @Entity
 @Getter
 @Setter

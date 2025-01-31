@@ -22,6 +22,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * CreditServiceTest contains unit tests for the CreditService class. It verifies the correctness
+ * of methods related to saving credits, checking and applying credits, and scheduling regular checks
+ * for account balances.
+ */
+
 class CreditServiceTest {
 
     @Mock

@@ -9,6 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * ValidationServiceTest contains unit tests for the ValidationService class. It verifies the correctness
+ * of methods related to validating and encoding user input, such as passwords, emails, and phone numbers.
+ */
+
 class ValidationServiceTest {
 
     private ValidationService validationService;

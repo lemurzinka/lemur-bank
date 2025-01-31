@@ -15,6 +15,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 
+/**
+ * TransactionDetail represents detailed information about a transaction.Accepted and rejected transactions are
+ * recorded in this entity.
+ * This entity is used to manage detailed transaction-related data.
+ */
 
 @Getter
 @Setter

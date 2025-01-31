@@ -7,6 +7,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.regex.Pattern;
 
+/**
+ * ValidationService provides methods for validating and encoding user input, such as phone numbers,
+ * passwords, and emails. It ensures that input meets specific criteria and securely encodes passwords.
+ */
+
 @Service
 public class ValidationService {
 

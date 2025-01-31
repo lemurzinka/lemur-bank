@@ -20,6 +20,12 @@ import java.util.Random;
 
 import static botBank.service.UserService.sendMessage;
 
+/**
+ * CardService provides methods for managing card-related operations, including creating, saving,
+ * updating, and retrieving cards. It handles card number generation, CVV and expiration date generation,
+ * and ensures unique card numbers. The service interacts with the CardRepository to perform database operations.
+ */
+
 @Service
 @RequiredArgsConstructor
 public class CardService {

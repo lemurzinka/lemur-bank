@@ -21,6 +21,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * AccountServiceTest contains unit tests for the AccountService class. It verifies the correctness
+ * of methods related to account operations such as saving, verifying, creating, and finding accounts.
+ */
+
+
 class AccountServiceTest {
 
     @Mock

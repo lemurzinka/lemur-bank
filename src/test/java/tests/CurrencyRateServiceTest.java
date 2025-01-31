@@ -15,6 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+/**
+ * CurrencyRateServiceTest contains unit tests for the CurrencyRateService class. It verifies the correctness
+ * of methods related to retrieving and formatting currency exchange rates.
+ */
+
 class CurrencyRateServiceTest {
 
     @Mock

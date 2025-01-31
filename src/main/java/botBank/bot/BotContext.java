@@ -10,6 +10,12 @@ import botBank.service.UserService;
 import botBank.service.ValidationService;
 import lombok.Getter;
 
+/**
+ * BotContext class holds the context required for processing interactions between the bot and the user.
+ * It encapsulates the bot instance, the user, the input text, and various services needed for operations.
+ * This class facilitates access to these components in a centralized manner, enhancing code organization
+ * and maintainability.
+ */
 
 @Getter
 public class BotContext {

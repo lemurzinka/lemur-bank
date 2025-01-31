@@ -6,6 +6,11 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * RateRetriever is a component responsible for retrieving currency rates from an external
+ * API. It uses a RestTemplate to send a GET request to the API and returns the rates in a map.
+ */
+
 @Component
 public class RateRetriever {
 

@@ -14,6 +14,12 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+/**
+ * MessageServiceTest contains unit tests for the MessageService class. It verifies the correctness
+ * of methods related to sending messages via the Telegram bot and handles exceptions that may occur
+ * during the message sending process.
+ */
+
 class MessageServiceTest {
 
     @Mock

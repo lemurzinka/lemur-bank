@@ -16,6 +16,12 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * CreditService provides methods for managing credit operations, including saving credits,
+ * checking and applying interest to credits, and scheduling regular checks for account balances.
+ * It interacts with CreditRepository and AccountRepository to perform database operations.
+ */
+
 @Service
 @AllArgsConstructor
 public class CreditService {

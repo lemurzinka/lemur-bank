@@ -26,6 +26,11 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * ChatBot is the core class responsible for handling updates from Telegram, processing user input,
+ * and managing the bot's interactions with users.
+ */
+
 @Component
 @PropertySource("classpath:telegram.properties")
 @RequiredArgsConstructor

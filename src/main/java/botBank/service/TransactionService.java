@@ -21,6 +21,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
+/**
+ * TransactionService manages the processing of financial transactions.
+ * It provides methods to parse amounts, validate sender details, retrieve recipient accounts,
+ * convert currencies, and save transactions. It also handles the processing of transactions
+ * between accounts and sending messages to users via Telegram.
+ */
+
 @Service
 public class TransactionService {
 

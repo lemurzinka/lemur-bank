@@ -30,6 +30,12 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * CommandServiceTest contains unit tests for the CommandService class. It verifies the correctness
+ * of methods related to handling user commands, such as updating user details, adding cards,
+ * listing users, banning/unbanning users and cards, managing credits, and handling currency.
+ */
+
 class CommandServiceTest {
 
     @Mock

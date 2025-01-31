@@ -23,6 +23,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * CardServiceTest contains unit tests for the CardService class. It verifies the correctness
+ * of methods related to card operations such as finding, adding, generating, creating,
+ * updating cards, and interacting with the EntityManager.
+ */
+
 class CardServiceTest {
 
     @Mock

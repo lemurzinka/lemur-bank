@@ -1,5 +1,10 @@
 package botBank.model;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 
 import javax.persistence.Column;
@@ -16,6 +21,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
+
+/**
+ * Transaction represents a financial transaction entity associated with an account. This entity is used
+ * to manage transaction-related operations.
+ */
 
 @Entity
 @Getter

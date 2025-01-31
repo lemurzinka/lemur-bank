@@ -21,7 +21,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * CardAccountServiceTest contains unit tests for the CardAccountService class. It verifies the correctness
+ * of methods related to creating and saving credit and debit card accounts and their interactions with
+ * the Telegram bot context.
+ */
 
 class CardAccountServiceTest {
 

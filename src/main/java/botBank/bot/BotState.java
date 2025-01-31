@@ -18,6 +18,16 @@ import java.util.List;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+
+/**
+ * The BotState enum represents the various states that the bot can be in while interacting with users.
+ * Each state corresponds to a specific step in the user journey, such as entering a command, providing
+ * user information, or processing transactions. The enum helps manage and control the bot's behavior
+ * based on the current state, ensuring a smooth and coherent user experience.
+ * This enum also provides methods for transitioning between states, handling input based on the current
+ * state, and defining actions to be taken when entering a new state.
+ */
+
 public enum BotState {
 
 

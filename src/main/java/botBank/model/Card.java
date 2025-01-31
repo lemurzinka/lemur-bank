@@ -19,6 +19,16 @@ import javax.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+
+
+
+/**
+ * Card represents a bank card entity associated with an account and user. It includes
+ * details such as the card number, expiration date, CVV, card type, and status (banned or not).
+ * This entity is used to manage card-related operations.
+ */
+
+
 @Entity
 @Getter
 @Setter

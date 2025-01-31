@@ -1,7 +1,12 @@
 package botBank.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -21,6 +26,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Account represents a bank account entity associated with a user. It contains details
+ * such as account number, balances, currency, and associated credits. This entity is
+ * used to manage account-related operations.
+ */
 
 @Entity
 @Getter

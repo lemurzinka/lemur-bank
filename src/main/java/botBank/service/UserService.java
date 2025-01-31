@@ -13,6 +13,12 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
 
+/**
+ * UserService provides methods for managing user operations such as finding, adding,
+ * updating, and listing users. It interacts with the UserRepository to perform database
+ * operations and communicates with users via Telegram messages.
+ */
+
 @Service
 @AllArgsConstructor
 public class UserService {

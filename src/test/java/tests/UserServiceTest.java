@@ -23,6 +23,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * UserServiceTest contains unit tests for the UserService class. It verifies the correctness
+ * of methods related to user operations, such as finding, adding, updating, and listing users.
+ * It also ensures that the appropriate messages are sent via the Telegram bot context.
+ */
+
 class UserServiceTest {
 
     @Mock

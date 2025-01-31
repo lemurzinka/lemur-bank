@@ -12,6 +12,12 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * CommandService handles the processing of user commands received from the bot.
+ * It updates the user's state and interacts with various services to perform actions
+ * such as adding cards, banning users, listing accounts, and sending messages.
+ */
+
 @Service
 @RequiredArgsConstructor
 public class CommandService {

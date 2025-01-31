@@ -14,6 +14,12 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
 
+/**
+ * CardAccountService provides methods for creating and managing credit and debit card accounts.
+ * It handles the creation of accounts and cards, ensuring unique account numbers, and facilitates
+ * communication with users via Telegram messages.
+ */
+
 @Service
 @AllArgsConstructor
 public class CardAccountService {
