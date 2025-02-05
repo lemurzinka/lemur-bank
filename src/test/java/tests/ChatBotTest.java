@@ -1,15 +1,15 @@
 package tests;
 
-import botBank.bot.ChatBot;
-import botBank.event.BotEvent;
-import botBank.model.User;
-import botBank.service.AccountService;
-import botBank.service.CardAccountService;
-import botBank.service.CardService;
-import botBank.service.CurrencyRateService;
-import botBank.service.TransactionService;
-import botBank.service.UserService;
-import botBank.service.ValidationService;
+import bot_bank.bot.ChatBot;
+import bot_bank.event.BotEvent;
+import bot_bank.model.User;
+import bot_bank.service.AccountService;
+import bot_bank.service.CardAccountService;
+import bot_bank.service.CardService;
+import bot_bank.service.CurrencyRateService;
+import bot_bank.service.TransactionService;
+import bot_bank.service.UserService;
+import bot_bank.service.ValidationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

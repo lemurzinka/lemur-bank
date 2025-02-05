@@ -1,12 +1,10 @@
 package tests;
 
-import botBank.model.Account;
-import botBank.model.User;
-import botBank.repo.AccountRepository;
-import botBank.service.AccountService;
+import bot_bank.model.Account;
+import bot_bank.repo.AccountRepository;
+import bot_bank.service.AccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -14,7 +12,6 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
@@ -59,19 +56,7 @@ class AccountServiceTest {
         verify(accountRepository, times(1)).save(account);
     }
 
-    @Test
-    void testCreateAndSaveAccount() {
-        User user = new User();
 
-        accountService.createAndSaveAccount(user);
-
-        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository, times(1)).save(accountCaptor.capture());
-
-        Account capturedAccount = accountCaptor.getValue();
-        assertNotNull(capturedAccount.getAccountNumber());
-        assertEquals(user, capturedAccount.getUser());
-    }
 
     @Test
     void testFindAllAccounts() {

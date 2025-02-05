@@ -1,32 +1,24 @@
 package tests;
 
-import botBank.bot.BotContext;
-import botBank.bot.BotState;
-import botBank.model.Account;
-import botBank.model.Card;
-import botBank.model.CardType;
-import botBank.model.TransactionDetail;
-import botBank.model.User;
-import botBank.service.AccountService;
-import botBank.service.CardAccountService;
-import botBank.service.CardService;
-import botBank.service.CommandService;
-import botBank.service.CurrencyRateService;
-import botBank.service.MessageService;
-import botBank.service.TransactionService;
-import botBank.service.UserService;
+import bot_bank.bot.BotContext;
+import bot_bank.bot.BotState;
+import bot_bank.model.Account;
+import bot_bank.model.Card;
+import bot_bank.model.CardType;
+import bot_bank.model.TransactionDetail;
+import bot_bank.model.User;
+import bot_bank.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import botBank.bot.ChatBot;
+import bot_bank.bot.ChatBot;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,6 +27,7 @@ import static org.mockito.Mockito.when;
  * of methods related to handling user commands, such as updating user details, adding cards,
  * listing users, banning/unbanning users and cards, managing credits, and handling currency.
  */
+
 
 class CommandServiceTest {
 
@@ -54,10 +47,16 @@ class CommandServiceTest {
     private TransactionService transactionService;
 
     @Mock
-    private AccountService accountService;
+    private AccountListingService accountListingService;
 
     @Mock
     private MessageService messageService;
+
+    @Mock
+    private  CardServiceFacade cardServiceFacade;
+
+    @Mock
+    private  UserListingService userListingService;
 
     @Mock
     private BotContext context;
@@ -73,7 +72,8 @@ class CommandServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        commandService = new CommandService(userService, cardService, cardAccountService, rateService, transactionService, accountService, messageService);
+        commandService = new CommandService(userService, cardService, cardAccountService, rateService,
+                transactionService, accountListingService, messageService, cardServiceFacade, userListingService);
         when(context.getUser()).thenReturn(user);
         when(context.getCardAccountService()).thenReturn(cardAccountService);
         when(context.getBot()).thenReturn(bot);
@@ -85,7 +85,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/update", context);
 
-        verify(user).setStateId(BotState.EnterPasswordForUpdate.ordinal());
+        verify(user).setStateId(BotState.ENTER_PASSWORD_FOR_UPDATE.ordinal());
         verify(messageService).sendMessage(123L, "You selected to update.");
         verify(userService).updateUser(user);
     }
@@ -96,7 +96,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/addcard", context);
 
-        verify(user).setStateId(BotState.AddCard.ordinal());
+        verify(user).setStateId(BotState.ADD_CARD.ordinal());
         verify(messageService).sendMessage(123L, "You selected to add a card.");
         verify(userService).updateUser(user);
     }
@@ -105,7 +105,7 @@ class CommandServiceTest {
     void testHandleCommandListUsers() {
         commandService.handleCommand("/listusers", context);
 
-        verify(userService).listUsers(context);
+        verify(userListingService).listUsers(context);
     }
 
     @Test
@@ -114,7 +114,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/banuser", context);
 
-        verify(user).setStateId(BotState.BanUser.ordinal());
+        verify(user).setStateId(BotState.BAN_USER.ordinal());
         verify(messageService).sendMessage(123L, "You selected to ban user.");
         verify(userService).updateUser(user);
     }
@@ -125,7 +125,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/unbanuser", context);
 
-        verify(user).setStateId(BotState.UnbanUser.ordinal());
+        verify(user).setStateId(BotState.UNBAN_USER.ordinal());
         verify(messageService).sendMessage(123L, "You selected to unban user.");
         verify(userService).updateUser(user);
     }
@@ -136,8 +136,10 @@ class CommandServiceTest {
 
         commandService.handleCommand("credit", context);
 
-        verify(cardAccountService).createCreditCardAndAccount(eq(user), eq(BigDecimal.valueOf(5000)), eq("UAH"), eq(context));
-        verify(user).setStateId(BotState.Menu.ordinal());
+        verify(cardAccountService).createCreditCardAndAccount(user, BigDecimal.valueOf(5000),
+                "UAH", context);
+
+        verify(user).setStateId(BotState.MENU.ordinal());
         verify(userService).updateUser(user);
     }
 
@@ -148,7 +150,7 @@ class CommandServiceTest {
         commandService.handleCommand("debit", context);
 
         verify(messageService).sendMessage(123L, "You selected to add a debit card.");
-        verify(user).setStateId(BotState.ChoseCurrency.ordinal());
+        verify(user).setStateId(BotState.CHOSE_CURRENCY.ordinal());
         verify(userService).updateUser(user);
     }
 
@@ -158,8 +160,9 @@ class CommandServiceTest {
 
         commandService.handleCommand("USD", context);
 
-        verify(cardAccountService).createDebitCardAndAccount(eq(user), eq("USD"), eq(context));
-        verify(user).setStateId(BotState.Menu.ordinal());
+        verify(cardAccountService).createDebitCardAndAccount(user, "USD",
+                context);
+        verify(user).setStateId(BotState.MENU.ordinal());
         verify(userService).updateUser(user);
     }
 
@@ -217,7 +220,7 @@ class CommandServiceTest {
         commandService.handleCommand("/send", context);
 
         verify(user).setTransactionDetail(any(TransactionDetail.class));
-        verify(user).setStateId(BotState.EnterCardNumberForTransaction.ordinal());
+        verify(user).setStateId(BotState.ENTER_CARD_NUMBER_FOR_TRANSACTION.ordinal());
         verify(userService).updateUser(user);
     }
 
@@ -227,7 +230,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/hi", context);
 
-        verify(user).setStateId(BotState.EnterPhone.ordinal());
+        verify(user).setStateId(BotState.ENTER_PHONE.ordinal());
         verify(userService).updateUser(user);
     }
 
@@ -235,14 +238,14 @@ class CommandServiceTest {
     void testHandleCommandListCards() {
         commandService.handleCommand("/listcards", context);
 
-        verify(cardService).listCards(context);
+        verify(cardServiceFacade).listCards(context);
     }
 
     @Test
     void testHandleCommandListAccounts() {
         commandService.handleCommand("/listaccounts", context);
 
-        verify(accountService).listAccounts(context);
+        verify(accountListingService).listAccounts(context);
     }
 
     @Test
@@ -251,7 +254,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/bancard", context);
 
-        verify(user).setStateId(BotState.BanCard.ordinal());
+        verify(user).setStateId(BotState.BAN_CARD.ordinal());
         verify(messageService).sendMessage(123L, "You selected to ban card.");
         verify(userService).updateUser(user);
     }
@@ -262,7 +265,7 @@ class CommandServiceTest {
 
         commandService.handleCommand("/unbancard", context);
 
-        verify(user).setStateId(BotState.UnbanCard.ordinal());
+        verify(user).setStateId(BotState.UNBAN_CARD.ordinal());
         verify(messageService).sendMessage(123L, "You selected to unban card.");
         verify(userService).updateUser(user);
     }

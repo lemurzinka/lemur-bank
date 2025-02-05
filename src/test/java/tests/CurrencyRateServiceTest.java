@@ -1,7 +1,7 @@
 package tests;
 
-import botBank.retrievers.RateRetriever;
-import botBank.service.CurrencyRateService;
+import bot_bank.retrievers.RateRetriever;
+import bot_bank.service.CurrencyRateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

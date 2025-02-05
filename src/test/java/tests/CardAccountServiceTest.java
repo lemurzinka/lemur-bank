@@ -1,14 +1,14 @@
 package tests;
 
-import botBank.bot.BotContext;
-import botBank.bot.ChatBot;
-import botBank.model.Account;
-import botBank.model.Card;
-import botBank.model.CardType;
-import botBank.model.User;
-import botBank.service.AccountService;
-import botBank.service.CardAccountService;
-import botBank.service.CardService;
+import bot_bank.bot.BotContext;
+import bot_bank.bot.ChatBot;
+import bot_bank.model.Account;
+import bot_bank.model.Card;
+import bot_bank.model.CardType;
+import bot_bank.model.User;
+import bot_bank.service.AccountService;
+import bot_bank.service.CardAccountService;
+import bot_bank.service.CardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -82,7 +82,7 @@ class CardAccountServiceTest {
 
         ArgumentCaptor<Card> cardCaptor = ArgumentCaptor.forClass(Card.class);
         verify(cardService, times(1)).addCard(cardCaptor.capture());
-        Card capturedCard = cardCaptor.getValue();
+
 
         verify(bot, times(1)).execute(any(SendMessage.class));
 
@@ -113,7 +113,7 @@ class CardAccountServiceTest {
 
         ArgumentCaptor<Card> cardCaptor = ArgumentCaptor.forClass(Card.class);
         verify(cardService, times(1)).addCard(cardCaptor.capture());
-        Card capturedCard = cardCaptor.getValue();
+
 
         verify(bot, times(1)).execute(any(SendMessage.class));
 

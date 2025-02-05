@@ -1,7 +1,7 @@
 package tests;
 
-import botBank.service.BotExecutor;
-import botBank.service.MessageService;
+import bot_bank.service.BotExecutor;
+import bot_bank.service.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

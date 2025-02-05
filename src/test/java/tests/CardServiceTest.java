@@ -1,9 +1,9 @@
 package tests;
 
-import botBank.model.Card;
-import botBank.model.CardType;
-import botBank.repo.CardRepository;
-import botBank.service.CardService;
+import bot_bank.model.Card;
+import bot_bank.model.CardType;
+import bot_bank.repo.CardRepository;
+import bot_bank.service.CardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
